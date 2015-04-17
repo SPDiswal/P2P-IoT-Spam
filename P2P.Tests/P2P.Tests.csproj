@@ -28,9 +28,22 @@
       <DependentUpon>web.config</DependentUpon>
     </None>
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="Integration\" />
-    <Folder Include="Unit\" />
+    <TypeScriptCompile Include="Integration\TestGuid.ts" />
+    <TypeScriptCompile Include="Scripts\typings\jasmine\jasmine.d.ts" />
+    <TypeScriptCompile Include="Unit\Bogus.ts" />
+    <TypeScriptCompile Include="Unit\TestFramework.ts" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\P2P.Broker\P2P.Broker.csproj">
+      <Project>{1a1b4172-abc1-409e-a190-2a09dd88dec5}</Project>
+      <Name>P2P.Broker</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\P2P\P2P.csproj">
+      <Project>{e6888b64-2488-471c-8dcb-abce17dc40b0}</Project>
+      <Name>P2P</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">12.0</VisualStudioVersion>
@@ -61,6 +74,7 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <TypeScriptRemoveComments>false</TypeScriptRemoveComments>
     <TypeScriptSourceMap>true</TypeScriptSourceMap>
+    <TypeScriptModuleKind>commonjs</TypeScriptModuleKind>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <TypeScriptRemoveComments>true</TypeScriptRemoveComments>

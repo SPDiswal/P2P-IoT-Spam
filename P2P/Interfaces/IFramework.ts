@@ -1,4 +1,7 @@
-﻿interface IFramework
+﻿import ISample = require("./ISample");
+import Guid = require("../Utilities/Guid");
+
+interface IFramework
 {
     publish<TContents>(tags: Array<string>, contents: TContents): void;
     subscribe<TContents>(tags: Array<string>, filter: (s: ISample<TContents>) => boolean, callback: (s: ISample<TContents>) => void): Guid;

@@ -1,4 +1,8 @@
-﻿interface IRoutingStrategy
+﻿import Guid = require("../Utilities/Guid");
+import ISample = require("./ISample");
+import ISubscription = require("./ISubscription");
+
+interface IRoutingStrategy
 {
     publish<TContents>(sample: ISample<TContents>): void;
     subscribe<TContents>(subscription: ISubscription<TContents>): Guid;
