@@ -5,6 +5,10 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2P", "P2P\P2P.csproj", "{E6888B64-2488-471C-8DCB-ABCE17DC40B0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2P.Broker", "P2P.Broker\P2P.Broker.csproj", "{1A1B4172-ABC1-409E-A190-2A09DD88DEC5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "P2P.Tests", "P2P.Tests\P2P.Tests.csproj", "{B67FDEAE-6A3C-4992-A55E-BB585F3865EA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{E6888B64-2488-471C-8DCB-ABCE17DC40B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E6888B64-2488-471C-8DCB-ABCE17DC40B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E6888B64-2488-471C-8DCB-ABCE17DC40B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A1B4172-ABC1-409E-A190-2A09DD88DEC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A1B4172-ABC1-409E-A190-2A09DD88DEC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A1B4172-ABC1-409E-A190-2A09DD88DEC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A1B4172-ABC1-409E-A190-2A09DD88DEC5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B67FDEAE-6A3C-4992-A55E-BB585F3865EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B67FDEAE-6A3C-4992-A55E-BB585F3865EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B67FDEAE-6A3C-4992-A55E-BB585F3865EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B67FDEAE-6A3C-4992-A55E-BB585F3865EA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
