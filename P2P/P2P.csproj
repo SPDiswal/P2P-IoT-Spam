@@ -33,6 +33,7 @@
     <TypeScriptCompile Include="Interfaces\IFramework.ts" />
     <TypeScriptCompile Include="Interfaces\IRoutingStrategy.ts" />
     <TypeScriptCompile Include="Interfaces\ISample.ts" />
+    <TypeScriptCompile Include="Interfaces\ISubscription.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
     <TypeScriptCompile Include="Utilities\Guid.ts" />
   </ItemGroup>
