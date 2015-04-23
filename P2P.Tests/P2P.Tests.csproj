@@ -32,7 +32,7 @@
     <Folder Include="Unit\" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="Integration\TestGuid.ts" />
+    <TypeScriptCompile Include="Integration\Guid.Spec.ts" />
     <TypeScriptCompile Include="Scripts\typings\jasmine\jasmine.d.ts" />
   </ItemGroup>
   <ItemGroup>

@@ -9,7 +9,7 @@
         return this.guid;
     }
 
-    // http://jsfiddle.net/briguy37/2MVFd/
+    // Borrowed from http://jsfiddle.net/briguy37/2MVFd/
     public static create(): Guid
     {
         var guidTemplate = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx";

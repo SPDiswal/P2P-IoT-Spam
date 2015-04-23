@@ -11,6 +11,6 @@ describe("GUID", () =>
         for (var i = 0; i < count; i++)
             guids.push(Guid.create());
 
-        expect(guids.filter((value, index, self) => self.indexOf(value) === index).length).toBe(count);
+        expect(guids.map(value => value.id).filter((value, index, self) => self.indexOf(value) === index).length).toBe(count);
     });
 });
