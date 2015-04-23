@@ -16,9 +16,11 @@ import IAddress = require("../../P2P/Interfaces/IAddress");
 // DONE A peer can publish a message with id 1 ("rainy" in Weather, Public information).
 // DONE A peer can subscribe to a subscription with id 0, a single tag and a filter.
 // DONE A peer can subscribe to a subscription with id 1, multiple tags and a filter.
-// TODO When subscribing, the peer only receives a published message once (no duplicates).
-// TODO When receiving a message, the subscription callback is invoked on the subscribing peer.
+// DONE The subscription callback is invoked when one subscription matches the message.
+// DONE The subscription callbacks are invoked when two subscriptions match the message.
+// DONE The subscription callback is only invoked once per message (no duplicates).
 // TODO A peer can unsubscribe using a subscription GUID.
+// TODO A peer has a limit on the number of recent messages to remember (to avoid duplicates).
 // :::::::::::::::::::
 
 describe("ChordRoutingStrategy", () =>
@@ -71,7 +73,7 @@ describe("ChordRoutingStrategy", () =>
     it("Can subscribe to a subscription with id 0, a single tag and a filter", () =>
     {
         var fakeGenerator = new FakeGuidGenerator([ "0" ]);
-        var subscription = new Subscription<string>([ "weather" ], () => true, fakeGenerator);
+        var subscription = new Subscription<string>(() => { }, [ "weather" ], () => true, fakeGenerator);
 
         strategy.subscribe(subscription);
 
@@ -81,10 +83,64 @@ describe("ChordRoutingStrategy", () =>
     it("Can subscribe to a subscription with id 1, multiple tags and a filter", () =>
     {
         var fakeGenerator = new FakeGuidGenerator([ "1" ]);
-        var subscription = new Subscription<string>([ "weather", "public information" ], () => true, fakeGenerator);
+        var subscription = new Subscription<string>(() => { }, [ "weather", "public information" ], () => true, fakeGenerator);
 
         strategy.subscribe(subscription);
 
         expect(sourceBroker.hasSent(MessageType.Subscribe, subscription)).toBeTruthy();
+    });
+
+    it("The subscription callback is invoked when one subscription matches the message", () =>
+    {
+        var hasBeenInvoked = false;
+
+        var fakeGenerator = new FakeGuidGenerator([ "0", "1" ]);
+        var subscription = new Subscription<string>(() => { hasBeenInvoked = true; }, [ "weather" ], () => true, fakeGenerator);
+        var message = new Message<string>("sunny", [ "weather" ], fakeGenerator);
+
+        strategy.subscribe(subscription);
+        sourceBroker.raise(MessageType.Incoming, message);
+
+        expect(hasBeenInvoked).toBeTruthy();
+    });
+
+    it("The subscription callbacks are invoked when two subscriptions match the message", () =>
+    {
+        var hasBeenInvoked = [ false, false ];
+        var subscriptions: Array<Subscription<string>> = [ ];
+
+        var fakeGenerator = new FakeGuidGenerator([ "0", "1", "2" ]);
+
+        subscriptions.push(new Subscription<string>(() => { hasBeenInvoked[0] = true; }, [ "weather" ], () => true, fakeGenerator));
+        subscriptions.push(new Subscription<string>(() => { hasBeenInvoked[1] = true; }, [ "public information" ], () => true, fakeGenerator));
+
+        var message = new Message<string>("rainy", [ "weather", "public information" ], fakeGenerator);
+
+        strategy.subscribe(subscriptions[0]);
+        strategy.subscribe(subscriptions[1]);
+        sourceBroker.raise(MessageType.Incoming, message);
+
+        expect(hasBeenInvoked[0] && hasBeenInvoked[1]).toBeTruthy();
+    });
+
+    it("The subscription callback is only invoked once per message (no duplicates)", () =>
+    {
+        var invocations = [ 0, 0 ];
+        var subscriptions: Array<Subscription<string>> = [ ];
+
+        var fakeGenerator = new FakeGuidGenerator([ "0", "1", "2" ]);
+
+        subscriptions.push(new Subscription<string>(() => { invocations[0]++; }, [ "weather" ], () => true, fakeGenerator));
+        subscriptions.push(new Subscription<string>(() => { invocations[1]++; }, [ "public information" ], () => true, fakeGenerator));
+
+        var message = new Message<string>("rainy", [ "weather", "public information" ], fakeGenerator);
+
+        strategy.subscribe(subscriptions[0]);
+        strategy.subscribe(subscriptions[1]);
+        sourceBroker.raise(MessageType.Incoming, message);
+        sourceBroker.raise(MessageType.Incoming, message);
+
+        expect(invocations[0]).toBe(1);
+        expect(invocations[1]).toBe(1);
     });
 });

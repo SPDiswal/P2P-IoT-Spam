@@ -6,14 +6,15 @@ import ISubscription = require("../Interfaces/ISubscription");
 
 class Subscription<TContents> implements ISubscription<TContents>
 {
-    private _id: Guid;
-
-    constructor(private _tags: string[], private _filter: (s: IMessage<TContents>) => boolean = () => true, generator: IGuidGenerator = new GuidGenerator())
+    constructor(private _callback: (s: IMessage<TContents>) => void,
+                private _tags: string[],
+                private _filter: (s: IMessage<TContents>) => boolean = () => true,
+                generator: IGuidGenerator = new GuidGenerator())
     {
         this._id = generator.create();
     }
 
-    public callback(s: IMessage<TContents>): void { }
+    private _id: Guid;
 
     public get id(): Guid
     {
@@ -28,6 +29,11 @@ class Subscription<TContents> implements ISubscription<TContents>
     public get filter(): (s: IMessage<TContents>) => boolean
     {
         return this._filter;
+    }
+
+    public get callback(): (s: IMessage<TContents>) => void
+    {
+        return this._callback;
     }
 
     public equals(that: Subscription<TContents>): boolean

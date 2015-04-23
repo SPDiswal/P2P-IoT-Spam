@@ -4,6 +4,7 @@
     Subscribe,
     Unsubscribe,
     Join,
+    Incoming,
 }
 
 export = MessageType;

@@ -7,6 +7,8 @@ class FakeBroker implements IBroker
     private message: MessageType;
     private data: any;
 
+    private callbacks: Array<(type: MessageType, data: any) => void> = [ ];
+
     constructor(private address: IAddress)
     {
     }
@@ -17,11 +19,22 @@ class FakeBroker implements IBroker
         this.data = data;
     }
 
-    public receive(callback: (type: MessageType, data: any) => void): void { }
+    public receive(callback: (type: MessageType, data: any) => void): void
+    {
+        this.callbacks.push(callback);
+    }
 
     public hasSent(message: MessageType, data: any): boolean
     {
         return this.message === message && this.data.equals(data);
+    }
+
+    public raise(message: MessageType, data: any): void
+    {
+        this.callbacks.forEach((callback: (m: MessageType, d: any) => void) =>
+        {
+            callback(message, data);
+        });
     }
 }
 
