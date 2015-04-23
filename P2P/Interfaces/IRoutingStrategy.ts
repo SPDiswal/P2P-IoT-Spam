@@ -1,4 +1,4 @@
-﻿import Guid = require("../Utilities/Guid");
+﻿import Guid = require("../Core/Guid");
 import IMessage = require("./IMessage");
 import ISubscription = require("./ISubscription");
 import IAddress = require("./IAddress");
@@ -6,7 +6,7 @@ import IAddress = require("./IAddress");
 interface IRoutingStrategy
 {
     publish<TContents>(message: IMessage<TContents>): void;
-    subscribe<TContents>(subscription: ISubscription<TContents>): Guid;
+    subscribe<TContents>(subscription: ISubscription<TContents>): void;
     unsubscribe(id: Guid): void;
     join(domain: IAddress): void;
 

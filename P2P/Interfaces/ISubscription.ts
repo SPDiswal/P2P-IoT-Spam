@@ -1,5 +1,5 @@
 ﻿import IMessage = require("./IMessage");
-import Guid = require("../Utilities/Guid");
+import Guid = require("../Core/Guid");
 
 interface ISubscription<TContents>
 {

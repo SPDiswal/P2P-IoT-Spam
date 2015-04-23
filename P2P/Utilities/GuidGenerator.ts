@@ -1,16 +1,10 @@
-﻿class Guid
+﻿import Guid = require("../Core/Guid");
+import IGuidGenerator = require("../Interfaces/IGuidGenerator");
+
+class GuidGenerator implements IGuidGenerator
 {
-    constructor(private guid: string)
-    {
-    }
-
-    public get id(): string
-    {
-        return this.guid;
-    }
-
     // Borrowed from http://jsfiddle.net/briguy37/2MVFd/
-    public static create(): Guid
+    public create(): Guid
     {
         var guidTemplate = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx";
         var time = new Date().getTime();
@@ -26,4 +20,4 @@
     }
 }
 
-export = Guid;
+export = GuidGenerator;

@@ -1,6 +1,6 @@
 ﻿import IAddress = require("./IAddress");
 import IMessage = require("./IMessage");
-import Guid = require("../Utilities/Guid");
+import Guid = require("../Core/Guid");
 
 interface IFramework
 {

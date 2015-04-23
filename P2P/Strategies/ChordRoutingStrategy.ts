@@ -1,4 +1,4 @@
-﻿import Guid = require("../Utilities/Guid");
+﻿import Guid = require("../Core/Guid");
 import IAddress = require("../Interfaces/IAddress");
 import IBroker = require("../../P2P.Broker/Interfaces/IBroker");
 import IMessage = require("../Interfaces/IMessage");
@@ -12,9 +12,15 @@ class ChordRoutingStrategy implements IRoutingStrategy
     {
     }
 
-    public publish<TContents>(message: IMessage<TContents>): void { }
+    public publish<TContents>(message: IMessage<TContents>): void
+    {
+        this.broker.send(MessageType.Publish, message);
+    }
 
-    public subscribe<TContents>(subscription: ISubscription<TContents>): Guid { return null; }
+    public subscribe<TContents>(subscription: ISubscription<TContents>): void
+    {
+        this.broker.send(MessageType.Subscribe, subscription);
+    }
 
     public unsubscribe(id: Guid): void { }
 
