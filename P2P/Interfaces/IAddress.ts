@@ -3,3 +3,5 @@
     host: string;
     port: number;
 }
+
+export = IAddress;

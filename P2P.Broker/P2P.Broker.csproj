@@ -29,6 +29,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="Core\ChordBroker.ts" />
     <TypeScriptCompile Include="Enumerations\MessageType.ts" />
     <TypeScriptCompile Include="Interfaces\IBroker.ts" />
   </ItemGroup>

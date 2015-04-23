@@ -29,12 +29,14 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="Core\Address.ts" />
     <TypeScriptCompile Include="Interfaces\IAddress.ts" />
     <TypeScriptCompile Include="Interfaces\IFramework.ts" />
     <TypeScriptCompile Include="Interfaces\IRoutingStrategy.ts" />
-    <TypeScriptCompile Include="Interfaces\ISample.ts" />
+    <TypeScriptCompile Include="Interfaces\IMessage.ts" />
     <TypeScriptCompile Include="Interfaces\ISubscription.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
+    <TypeScriptCompile Include="Strategies\ChordRoutingStrategy.ts" />
     <TypeScriptCompile Include="Utilities\Guid.ts" />
   </ItemGroup>
   <ItemGroup />

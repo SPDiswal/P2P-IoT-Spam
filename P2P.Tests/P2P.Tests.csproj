@@ -28,12 +28,12 @@
       <DependentUpon>web.config</DependentUpon>
     </None>
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="Unit\" />
-  </ItemGroup>
-  <ItemGroup>
+    <TypeScriptCompile Include="Fakes\Broker\FakeBroker.ts" />
     <TypeScriptCompile Include="Integration\Guid.Spec.ts" />
     <TypeScriptCompile Include="Scripts\typings\jasmine\jasmine.d.ts" />
+    <TypeScriptCompile Include="Unit\ChordRoutingStrategy.Spec.ts" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\P2P.Broker\P2P.Broker.csproj">

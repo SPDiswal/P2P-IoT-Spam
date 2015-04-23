@@ -5,3 +5,5 @@
     Unsubscribe,
     Join,
 }
+
+export = MessageType;

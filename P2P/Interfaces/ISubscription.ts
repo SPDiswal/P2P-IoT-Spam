@@ -1,9 +1,11 @@
-﻿import ISample = require("./ISample");
+﻿import IMessage = require("./IMessage");
+import Guid = require("../Utilities/Guid");
 
 interface ISubscription<TContents>
 {
-    callback: (s: ISample<TContents>) => void;
-    filter: (s: ISample<TContents>) => boolean;
+    id: Guid;
+    callback: (s: IMessage<TContents>) => void;
+    filter: (s: IMessage<TContents>) => boolean;
     tags: Array<string>;
 }
 

@@ -1,10 +1,10 @@
 ﻿import Guid = require("../Utilities/Guid");
 
-interface ISample<TContents>
+interface IMessage<TContents>
 {
     id: Guid;
     contents: TContents;
     tags: Array<string>;
 }
 
-export = ISample;
+export = IMessage;
