@@ -19,7 +19,8 @@ import IAddress = require("../../P2P/Interfaces/IAddress");
 // DONE The subscription callback is invoked when one subscription matches the message.
 // DONE The subscription callbacks are invoked when two subscriptions match the message.
 // DONE The subscription callback is only invoked once per message (no duplicates).
-// TODO A peer can unsubscribe using a subscription GUID.
+// DONE A peer can unsubscribe using a subscription GUID 42.
+// DONE A peer can unsubscribe using a subscription GUID 1337.
 // TODO A peer has a limit on the number of recent messages to remember (to avoid duplicates).
 // :::::::::::::::::::
 
@@ -142,5 +143,26 @@ describe("ChordRoutingStrategy", () =>
 
         expect(invocations[0]).toBe(1);
         expect(invocations[1]).toBe(1);
+    });
+
+    it("Can unsubscribe to a subscription with id 42", () =>
+    {
+        var fakeGenerator = new FakeGuidGenerator([ "42" ]);
+        var subscription = new Subscription<string>(() => { }, [ "weather" ], () => true, fakeGenerator);
+
+        strategy.subscribe(subscription);
+        strategy.unsubscribe(subscription.id);
+
+        expect(sourceBroker.hasSent(MessageType.Unsubscribe, subscription.id)).toBeTruthy();
+    });
+
+    it("Can unsubscribe to a subscription with id 1337",() => {
+        var fakeGenerator = new FakeGuidGenerator(["1337"]);
+        var subscription = new Subscription<string>(() => { }, ["weather"],() => true, fakeGenerator);
+
+        strategy.subscribe(subscription);
+        strategy.unsubscribe(subscription.id);
+
+        expect(sourceBroker.hasSent(MessageType.Unsubscribe, subscription.id)).toBeTruthy();
     });
 });

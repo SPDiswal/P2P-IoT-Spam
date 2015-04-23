@@ -38,7 +38,10 @@ class ChordRoutingStrategy implements IRoutingStrategy
         });
     }
 
-    public unsubscribe(id: Guid): void { }
+    public unsubscribe(id: Guid): void
+    {
+        this.broker.send(MessageType.Unsubscribe, id);
+    }
 
     public join(domain: IAddress): void
     {
