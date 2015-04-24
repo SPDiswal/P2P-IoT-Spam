@@ -2,7 +2,7 @@
 import IBroker = require("../Interfaces/IBroker");
 import MessageType = require("../Enumerations/MessageType");
 
-class ChordBroker implements IBroker
+class RestChordBroker implements IBroker
 {
     constructor(private address: IAddress)
     {
@@ -13,4 +13,4 @@ class ChordBroker implements IBroker
     public receive(callback: (type: MessageType, data: any) => void): void { }
 }
 
-export = ChordBroker;
+export = RestChordBroker;

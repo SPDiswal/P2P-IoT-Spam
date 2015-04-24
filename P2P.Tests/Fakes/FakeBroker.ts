@@ -26,7 +26,10 @@ class FakeBroker implements IBroker
 
     public hasSent(message: MessageType, data: any): boolean
     {
-        return this.message === message && this.data.equals(data);
+        if (this.data.hasOwnProperty("equals"))
+            return this.message === message && this.data.equals(data);
+        else
+            return this.message === message && this.data === data;
     }
 
     public raise(message: MessageType, data: any): void
