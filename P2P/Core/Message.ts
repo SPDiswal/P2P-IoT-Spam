@@ -2,11 +2,11 @@
 import IGuidGenerator = require("../Interfaces/IGuidGenerator");
 import IMessage = require("../Interfaces/IMessage");
 
-class Message<TContents> implements IMessage<TContents>
+class Message implements IMessage
 {
     private _id: string;
 
-    constructor(private _contents: TContents, private _tags: string[], generator: IGuidGenerator = new GuidGenerator())
+    constructor(private _contents: any, private _tags: Array<string>, generator: IGuidGenerator = new GuidGenerator())
     {
         this._id = generator.create();
     }
@@ -16,17 +16,17 @@ class Message<TContents> implements IMessage<TContents>
         return this._id;
     }
 
-    public get contents(): TContents
+    public get contents(): any
     {
         return this._contents;
     }
 
-    public get tags(): string[]
+    public get tags(): Array<string>
     {
         return this._tags;
     }
 
-    public equals(that: Message<TContents>): boolean
+    public equals(that: Message): boolean
     {
         return this._id === that._id;
     }

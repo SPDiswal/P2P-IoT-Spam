@@ -1,7 +1,7 @@
-﻿interface IMessage<TContents>
+﻿interface IMessage
 {
     id: string;
-    contents: TContents;
+    contents: any;
     tags: Array<string>;
 }
 

@@ -1,4 +1,5 @@
-﻿import IAddress = require("../../P2P/Interfaces/IAddress");
+﻿import ArrayUtilities = require("../../P2P/Utilities/ArrayUtilities");
+import IAddress = require("../../P2P/Interfaces/IAddress");
 import IBroker = require("../../P2P.Broker/Interfaces/IBroker");
 import MessageType = require("../../P2P.Broker/Enumerations/MessageType");
 
@@ -26,10 +27,12 @@ class FakeBroker implements IBroker
 
     public hasSent(message: MessageType, data: any): boolean
     {
-        if (this.data.hasOwnProperty("equals"))
-            return this.message === message && this.data.equals(data);
+        if (data instanceof Array)
+            return message === this.message && ArrayUtilities.equals(data, this.data);
+        else if (data.hasOwnProperty("equals"))
+            return message === this.message && data.equals(this.data);
         else
-            return this.message === message && this.data === data;
+            return message === this.message && data === this.data;
     }
 
     public raise(message: MessageType, data: any): void
