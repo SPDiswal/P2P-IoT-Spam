@@ -1,8 +1,6 @@
-﻿import Guid = require("../Core/Guid");
-
-interface IMessage<TContents>
+﻿interface IMessage<TContents>
 {
-    id: Guid;
+    id: string;
     contents: TContents;
     tags: Array<string>;
 }

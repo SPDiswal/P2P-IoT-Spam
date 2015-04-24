@@ -1,8 +1,6 @@
-﻿import Guid = require("../Core/Guid");
-
-interface IGuidGenerator
+﻿interface IGuidGenerator
 {
-    create(): Guid;
+    create(): string;
 }
 
 export = IGuidGenerator;

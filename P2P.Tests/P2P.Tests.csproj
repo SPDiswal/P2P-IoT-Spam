@@ -30,8 +30,8 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <TypeScriptCompile Include="Fakes\Broker\FakeBroker.ts" />
-    <TypeScriptCompile Include="Fakes\Broker\FakeGuidGenerator.ts" />
+    <TypeScriptCompile Include="Fakes\FakeBroker.ts" />
+    <TypeScriptCompile Include="Fakes\FakeGuidGenerator.ts" />
     <TypeScriptCompile Include="Integration\Guid.Spec.ts" />
     <TypeScriptCompile Include="Scripts\typings\jasmine\jasmine.d.ts" />
     <TypeScriptCompile Include="Unit\ChordBroker.Spec.ts" />

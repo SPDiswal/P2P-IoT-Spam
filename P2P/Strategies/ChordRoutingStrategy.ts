@@ -1,5 +1,4 @@
-﻿import Guid = require("../Core/Guid");
-import IAddress = require("../Interfaces/IAddress");
+﻿import IAddress = require("../Interfaces/IAddress");
 import IBroker = require("../../P2P.Broker/Interfaces/IBroker");
 import IMessage = require("../Interfaces/IMessage");
 import IRoutingStrategy = require("../Interfaces/IRoutingStrategy");
@@ -22,23 +21,23 @@ class ChordRoutingStrategy implements IRoutingStrategy
     public subscribe<TContents>(subscription: ISubscription<TContents>): void
     {
         this.broker.send(MessageType.Subscribe, subscription);
-        this.broker.receive((m: MessageType, d: IMessage<TContents>) =>
+        this.broker.receive((messageType: MessageType, message: IMessage<TContents>) =>
         {
-            if (m === MessageType.Incoming)
+            if (messageType === MessageType.Incoming)
             {
-                if (!this.recentMessages.hasOwnProperty(d.id.id))
-                    this.recentMessages[d.id.id] = <Array<string>>[ ];
+                if (!this.recentMessages.hasOwnProperty(message.id))
+                    this.recentMessages[message.id] = <Array<string>>[ ];
 
-                if (!this.isInArray(this.recentMessages[d.id.id], subscription.id.id))
+                if (!this.isInArray(this.recentMessages[message.id], subscription.id))
                 {
-                    subscription.callback(d);
-                    this.recentMessages[d.id.id].push(subscription.id.id);
+                    subscription.callback(message);
+                    this.recentMessages[message.id].push(subscription.id);
                 }
             }
         });
     }
 
-    public unsubscribe(id: Guid): void
+    public unsubscribe(id: string): void
     {
         this.broker.send(MessageType.Unsubscribe, id);
     }

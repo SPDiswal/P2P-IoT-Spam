@@ -2,8 +2,8 @@
 
 import Address = require("../../P2P/Core/Address");
 import ChordRoutingStrategy = require("../../P2P/Strategies/ChordRoutingStrategy");
-import FakeBroker = require("../Fakes/Broker/FakeBroker");
-import FakeGuidGenerator = require("../Fakes/Broker/FakeGuidGenerator");
+import FakeBroker = require("../Fakes/FakeBroker");
+import FakeGuidGenerator = require("../Fakes/FakeGuidGenerator");
 import Message = require("../../P2P/Core/Message");
 import MessageType = require("../../P2P.Broker/Enumerations/MessageType");
 import Subscription = require("../../P2P/Core/Subscription");

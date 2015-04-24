@@ -1,6 +1,6 @@
-﻿import IAddress = require("../../../P2P/Interfaces/IAddress");
-import IBroker = require("../../../P2P.Broker/Interfaces/IBroker");
-import MessageType = require("../../../P2P.Broker/Enumerations/MessageType");
+﻿import IAddress = require("../../P2P/Interfaces/IAddress");
+import IBroker = require("../../P2P.Broker/Interfaces/IBroker");
+import MessageType = require("../../P2P.Broker/Enumerations/MessageType");
 
 class FakeBroker implements IBroker
 {

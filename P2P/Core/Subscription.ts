@@ -1,5 +1,4 @@
-﻿import Guid = require("../Core/Guid");
-import GuidGenerator = require("../Utilities/GuidGenerator");
+﻿import GuidGenerator = require("../Utilities/GuidGenerator");
 import IGuidGenerator = require("../Interfaces/IGuidGenerator");
 import IMessage = require("../Interfaces/IMessage");
 import ISubscription = require("../Interfaces/ISubscription");
@@ -14,9 +13,9 @@ class Subscription<TContents> implements ISubscription<TContents>
         this._id = generator.create();
     }
 
-    private _id: Guid;
+    private _id: string;
 
-    public get id(): Guid
+    public get id(): string
     {
         return this._id;
     }
@@ -38,7 +37,7 @@ class Subscription<TContents> implements ISubscription<TContents>
 
     public equals(that: Subscription<TContents>): boolean
     {
-        return this._id.equals(that._id);
+        return this._id === that._id;
     }
 }
 

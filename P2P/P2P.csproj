@@ -40,7 +40,6 @@
     <TypeScriptCompile Include="Interfaces\ISubscription.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
     <TypeScriptCompile Include="Strategies\ChordRoutingStrategy.ts" />
-    <TypeScriptCompile Include="Core\Guid.ts" />
     <TypeScriptCompile Include="Utilities\GuidGenerator.ts" />
   </ItemGroup>
   <ItemGroup />
