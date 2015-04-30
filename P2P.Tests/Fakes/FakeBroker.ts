@@ -1,31 +1,33 @@
 ﻿import ArrayUtilities = require("../../P2P/Utilities/ArrayUtilities");
 import IAddress = require("../../P2P/Interfaces/IAddress");
 import IBroker = require("../../P2P.Broker/Interfaces/IBroker");
-import MessageType = require("../../P2P.Broker/Enumerations/MessageType");
 
 class FakeBroker implements IBroker
 {
-    private message: MessageType;
+    private message: string;
     private data: any;
-
-    private callbacks: Array<(type: MessageType, data: any) => void> = [ ];
+    private callback: (message: string, data: any) => any;
 
     constructor(private address: IAddress)
     {
     }
 
-    public send(message: MessageType, data: any): void
+    public sendFromStrategy(destination: IAddress, message: string, data: any): any
     {
         this.message = message;
         this.data = data;
     }
 
-    public receive(callback: (type: MessageType, data: any) => void): void
+    public handleToStrategy(callback: (message: string, data: any) => any): void
     {
-        this.callbacks.push(callback);
+        this.callback = callback;
     }
 
-    public hasSent(message: MessageType, data: any): boolean
+    public handleFromNetwork(message: string, data: any): any
+    {
+    }
+
+    public hasSent(message: string, data: any): boolean
     {
         if (data instanceof Array)
             return message === this.message && ArrayUtilities.equals(data, this.data);
@@ -35,12 +37,11 @@ class FakeBroker implements IBroker
             return message === this.message && data === this.data;
     }
 
-    public raise(message: MessageType, data: any): void
+    public raise(message: string, data: any): any
     {
-        this.callbacks.forEach((callback: (m: MessageType, d: any) => void) =>
-        {
-            callback(message, data);
-        });
+        if (this.callback !== null)
+            return this.callback(message, data);
+        return null;
     }
 }
 

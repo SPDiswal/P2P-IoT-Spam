@@ -1,7 +1,7 @@
 ﻿/// <reference path="../Scripts/typings/jasmine/jasmine.d.ts" />
 
 import Address = require("../../P2P/Core/Address");
-import ChordRoutingStrategy = require("../../P2P/Strategies/ChordRoutingStrategy");
+import SubscriberListRoutingStrategy = require("../../P2P/Strategies/SubscriberListRoutingStrategy");
 import FakeGuidGenerator = require("../Fakes/FakeGuidGenerator");
 import Message = require("../../P2P/Core/Message");
 import MessageType = require("../../P2P.Broker/Enumerations/MessageType");
@@ -10,13 +10,16 @@ import IAddress = require("../../P2P/Interfaces/IAddress");
 
 // :::: TEST LIST ::::
 // TODO When sending Join, it sends a /join/targetAddress HTTP request.
-// TODO When sending Publish, it sends a /lookup/hash(tag) HTTP request per tag to retrieve peers responsible for subscriber lists.
+// TODO When sending Publish, it sends a /lookup/hash(tag) HTTP request per message tag to retrieve peers responsible for subscriber lists.
 // TODO When sending Publish, it sends a /subscribers HTTP request to each responsible peer to retrieve subscriber lists.
 // TODO When sending Publish, it sends a /message HTTP request to each subscriber.
-// TODO When sending Subscribe, it sends a /lookup/hash(tag) HTTP request per tag to retrieve peers responsible for subscriber lists.
+// TODO When sending Subscribe, it sends a /lookup/hash(tag) HTTP request per subscription tag to retrieve peers responsible for subscriber lists.
 // TODO When sending Subscribe, it sends a /subscription HTTP request to each responsible peer to update their subscriber lists.
-// TODO When sending Unsubscribe, it sends a /lookup/hash(tag) HTTP request per tag to retrieve peers responsible for subscriber lists.
+// TODO When sending Unsubscribe, it sends a /lookup/hash(tag) HTTP request per subscription tag to retrieve peers responsible for subscriber lists.
 // TODO When sending Unsubscribe, it sends a /unsubscription HTTP request to each responsible peer to update their subscriber lists.
+
+// TODO When Chord peer receives HTTP request at /message, 
+
 
 // TODO When receiving Subscribers, it invokes callback from RoutingStrategy to get filtered subscriber list.
 

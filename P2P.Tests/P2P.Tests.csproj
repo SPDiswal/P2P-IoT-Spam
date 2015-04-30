@@ -35,7 +35,7 @@
     <TypeScriptCompile Include="Integration\Guid.Spec.ts" />
     <TypeScriptCompile Include="Scripts\typings\jasmine\jasmine.d.ts" />
     <TypeScriptCompile Include="Unit\ChordBroker.Spec.ts" />
-    <TypeScriptCompile Include="Unit\ChordRoutingStrategy.Spec.ts" />
+    <TypeScriptCompile Include="Unit\SubscriberListRoutingStrategy.Spec.ts" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\P2P.Broker\P2P.Broker.csproj">

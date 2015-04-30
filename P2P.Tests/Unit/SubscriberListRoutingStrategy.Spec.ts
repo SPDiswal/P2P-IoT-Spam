@@ -1,11 +1,10 @@
 ﻿/// <reference path="../Scripts/typings/jasmine/jasmine.d.ts" />
 
 import Address = require("../../P2P/Core/Address");
-import ChordRoutingStrategy = require("../../P2P/Strategies/ChordRoutingStrategy");
+import SubscriberListRoutingStrategy = require("../../P2P/Strategies/SubscriberListRoutingStrategy");
 import FakeBroker = require("../Fakes/FakeBroker");
 import FakeGuidGenerator = require("../Fakes/FakeGuidGenerator");
 import Message = require("../../P2P/Core/Message");
-import MessageType = require("../../P2P.Broker/Enumerations/MessageType");
 import Subscription = require("../../P2P/Core/Subscription");
 import IAddress = require("../../P2P/Interfaces/IAddress");
 
@@ -37,15 +36,15 @@ import IAddress = require("../../P2P/Interfaces/IAddress");
 // TODO A peer has a limit on the number of recent messages to remember (to avoid duplicates).
 // :::::::::::::::::::
 
-describe("ChordRoutingStrategy", () =>
+describe("SubscriberListRoutingStrategy", () =>
 {
-    var sourceAddress: IAddress, sourceBroker: FakeBroker, strategy: ChordRoutingStrategy;
+    var sourceAddress: IAddress, sourceBroker: FakeBroker, strategy: SubscriberListRoutingStrategy;
 
     beforeEach(() =>
     {
         sourceAddress = new Address("127.0.0.1", 8080);
         sourceBroker = new FakeBroker(sourceAddress);
-        strategy = new ChordRoutingStrategy(sourceBroker);
+        strategy = new SubscriberListRoutingStrategy(sourceAddress, sourceBroker);
     });
 
     it("Can join peer at 127.0.0.1:8081", () =>
@@ -53,7 +52,7 @@ describe("ChordRoutingStrategy", () =>
         var targetAddress = new Address("127.0.0.1", 8081);
         strategy.join(targetAddress);
 
-        expect(sourceBroker.hasSent(MessageType.Join, targetAddress)).toBeTruthy();
+        expect(sourceBroker.hasSent("Join", targetAddress)).toBeTruthy();
     });
 
     it("Can join peer at 127.0.0.1:8082", () =>
@@ -61,7 +60,7 @@ describe("ChordRoutingStrategy", () =>
         var targetAddress = new Address("127.0.0.1", 8082);
         strategy.join(targetAddress);
 
-        expect(sourceBroker.hasSent(MessageType.Join, targetAddress)).toBeTruthy();
+        expect(sourceBroker.hasSent("Join", targetAddress)).toBeTruthy();
     });
 
     it("Can publish a message with id 0 (\"sunny\" in Weather)", () =>
@@ -71,7 +70,7 @@ describe("ChordRoutingStrategy", () =>
 
         strategy.publish(message);
 
-        expect(sourceBroker.hasSent(MessageType.Publish, message)).toBeTruthy();
+        expect(sourceBroker.hasSent("Publish", message)).toBeTruthy();
     });
 
     it("Can publish a message with id 1 (\"rainy\" in Weather, Public information)", () =>
@@ -81,7 +80,7 @@ describe("ChordRoutingStrategy", () =>
 
         strategy.publish(message);
 
-        expect(sourceBroker.hasSent(MessageType.Publish, message)).toBeTruthy();
+        expect(sourceBroker.hasSent("Publish", message)).toBeTruthy();
     });
 
     it("Can subscribe to a subscription with id 0, a single tag and a filter", () =>
@@ -91,7 +90,7 @@ describe("ChordRoutingStrategy", () =>
 
         strategy.subscribe(subscription);
 
-        expect(sourceBroker.hasSent(MessageType.Subscribe, subscription)).toBeTruthy();
+        expect(sourceBroker.hasSent("Subscribe", subscription)).toBeTruthy();
     });
 
     it("Can subscribe to a subscription with id 1, multiple tags and a filter", () =>
@@ -101,7 +100,7 @@ describe("ChordRoutingStrategy", () =>
 
         strategy.subscribe(subscription);
 
-        expect(sourceBroker.hasSent(MessageType.Subscribe, subscription)).toBeTruthy();
+        expect(sourceBroker.hasSent("Subscribe", subscription)).toBeTruthy();
     });
 
     it("The subscription callback is invoked when one subscription matches the message", () =>
@@ -113,7 +112,7 @@ describe("ChordRoutingStrategy", () =>
         var message = new Message("sunny", [ "weather" ], fakeGenerator);
 
         strategy.subscribe(subscription);
-        sourceBroker.raise(MessageType.Message, message);
+        sourceBroker.raise("Message", message);
 
         expect(hasBeenInvoked).toBeTruthy();
     });
@@ -132,7 +131,7 @@ describe("ChordRoutingStrategy", () =>
 
         strategy.subscribe(subscriptions[0]);
         strategy.subscribe(subscriptions[1]);
-        sourceBroker.raise(MessageType.Message, message);
+        sourceBroker.raise("Message", message);
 
         expect(hasBeenInvoked[0] && hasBeenInvoked[1]).toBeTruthy();
     });
@@ -151,8 +150,8 @@ describe("ChordRoutingStrategy", () =>
 
         strategy.subscribe(subscriptions[0]);
         strategy.subscribe(subscriptions[1]);
-        sourceBroker.raise(MessageType.Message, message);
-        sourceBroker.raise(MessageType.Message, message);
+        sourceBroker.raise("Message", message);
+        sourceBroker.raise("Message", message);
 
         expect(invocations[0]).toBe(1);
         expect(invocations[1]).toBe(1);
@@ -166,7 +165,7 @@ describe("ChordRoutingStrategy", () =>
         var message = new Message("rainy", [ "weather", "public information" ], fakeGenerator);
 
         strategy.subscribe(subscription);
-        sourceBroker.raise(MessageType.Message, message);
+        sourceBroker.raise("Message", message);
 
         expect(invocations).toBe(1);
     });
@@ -179,7 +178,7 @@ describe("ChordRoutingStrategy", () =>
         strategy.subscribe(subscription);
         strategy.unsubscribe(subscription.id);
 
-        expect(sourceBroker.hasSent(MessageType.Unsubscribe, subscription.id)).toBeTruthy();
+        expect(sourceBroker.hasSent("Unsubscribe", subscription.id)).toBeTruthy();
     });
 
     it("Can unsubscribe to a subscription with id 1337", () =>
@@ -190,7 +189,7 @@ describe("ChordRoutingStrategy", () =>
         strategy.subscribe(subscription);
         strategy.unsubscribe(subscription.id);
 
-        expect(sourceBroker.hasSent(MessageType.Unsubscribe, subscription.id)).toBeTruthy();
+        expect(sourceBroker.hasSent("Unsubscribe", subscription.id)).toBeTruthy();
     });
 
     it("The subscriber list has one subscription when receiving one Subscription message", () =>
@@ -198,7 +197,7 @@ describe("ChordRoutingStrategy", () =>
         var fakeGenerator = new FakeGuidGenerator([ "0" ]);
         var subscription = new Subscription(sourceAddress, () => { }, [ "weather" ], () => true, fakeGenerator);
 
-        sourceBroker.raise(MessageType.Subscription, subscription);
+        sourceBroker.raise("Subscription", subscription);
 
         expect(strategy.subscribers.length).toBe(1);
     });
@@ -211,8 +210,8 @@ describe("ChordRoutingStrategy", () =>
         subscriptions.push(new Subscription(sourceAddress, () => { }, [ "weather" ], () => true, fakeGenerator));
         subscriptions.push(new Subscription(sourceAddress, () => { }, [ "public information" ], () => true, fakeGenerator));
 
-        sourceBroker.raise(MessageType.Subscription, subscriptions[0]);
-        sourceBroker.raise(MessageType.Subscription, subscriptions[1]);
+        sourceBroker.raise("Subscription", subscriptions[0]);
+        sourceBroker.raise("Subscription", subscriptions[1]);
 
         expect(strategy.subscribers.length).toBe(2);
     });
@@ -222,8 +221,8 @@ describe("ChordRoutingStrategy", () =>
         var fakeGenerator = new FakeGuidGenerator([ "0" ]);
         var subscription = new Subscription(sourceAddress, () => { }, [ "weather" ], () => true, fakeGenerator);
 
-        sourceBroker.raise(MessageType.Subscription, subscription);
-        sourceBroker.raise(MessageType.Unsubscription, subscription.id);
+        sourceBroker.raise("Subscription", subscription);
+        sourceBroker.raise("Unsubscription", subscription.id);
 
         expect(strategy.subscribers.length).toBe(0);
     });
@@ -236,9 +235,9 @@ describe("ChordRoutingStrategy", () =>
         subscriptions.push(new Subscription(sourceAddress, () => { }, [ "weather" ], () => true, fakeGenerator));
         subscriptions.push(new Subscription(sourceAddress, () => { }, [ "public information" ], () => true, fakeGenerator));
 
-        sourceBroker.raise(MessageType.Subscription, subscriptions[0]);
-        sourceBroker.raise(MessageType.Subscription, subscriptions[1]);
-        sourceBroker.raise(MessageType.Unsubscription, subscriptions[0].id);
+        sourceBroker.raise("Subscription", subscriptions[0]);
+        sourceBroker.raise("Subscription", subscriptions[1]);
+        sourceBroker.raise("Unsubscription", subscriptions[0].id);
 
         expect(strategy.subscribers.length).toBe(1);
         expect(strategy.subscribers[0].id).toBe(subscriptions[1].id);
@@ -253,11 +252,11 @@ describe("ChordRoutingStrategy", () =>
         subscriptions.push(new Subscription(new Address("127.0.0.1", 8081), () => { }, [ "public information" ], () => true, fakeGenerator));
         var message = new Message("rainy", [ "weather", "public information" ], fakeGenerator);
 
-        sourceBroker.raise(MessageType.Subscription, subscriptions[0]);
-        sourceBroker.raise(MessageType.Subscription, subscriptions[1]);
-        sourceBroker.raise(MessageType.Subscribers, message);
+        sourceBroker.raise("Subscription", subscriptions[0]);
+        sourceBroker.raise("Subscription", subscriptions[1]);
+        sourceBroker.raise("Subscribers", message);
 
-        expect(sourceBroker.hasSent(MessageType.FilteredSubscribers, [ new Address("127.0.0.1", 8080), new Address("127.0.0.1", 8081) ])).toBeTruthy();
+        expect(sourceBroker.hasSent("FilteredSubscribers", [ new Address("127.0.0.1", 8080), new Address("127.0.0.1", 8081) ])).toBeTruthy();
     });
 
     it("A subscriber list is sent to broker when receiving Subscribers message with subscribers 8080, 8081 and 8082", () =>
@@ -270,12 +269,12 @@ describe("ChordRoutingStrategy", () =>
         subscriptions.push(new Subscription(new Address("127.0.0.1", 8082), () => { }, [ "weather", "public information" ], () => true, fakeGenerator));
         var message = new Message("rainy", [ "weather", "public information" ], fakeGenerator);
 
-        sourceBroker.raise(MessageType.Subscription, subscriptions[0]);
-        sourceBroker.raise(MessageType.Subscription, subscriptions[1]);
-        sourceBroker.raise(MessageType.Subscription, subscriptions[2]);
-        sourceBroker.raise(MessageType.Subscribers, message);
+        sourceBroker.raise("Subscription", subscriptions[0]);
+        sourceBroker.raise("Subscription", subscriptions[1]);
+        sourceBroker.raise("Subscription", subscriptions[2]);
+        sourceBroker.raise("Subscribers", message);
 
-        expect(sourceBroker.hasSent(MessageType.FilteredSubscribers, [ new Address("127.0.0.1", 8080), new Address("127.0.0.1", 8081), new Address("127.0.0.1", 8082) ])).toBeTruthy();
+        expect(sourceBroker.hasSent("FilteredSubscribers", [ new Address("127.0.0.1", 8080), new Address("127.0.0.1", 8081), new Address("127.0.0.1", 8082) ])).toBeTruthy();
     });
 
     it("The subscriber list is filtered by tags when subscriptions have exactly one tag", () =>
@@ -288,12 +287,12 @@ describe("ChordRoutingStrategy", () =>
         subscriptions.push(new Subscription(new Address("127.0.0.1", 8082), () => { }, [ "public information" ], () => true, fakeGenerator));
         var message = new Message("rainy", [ "weather", "public information" ], fakeGenerator);
 
-        sourceBroker.raise(MessageType.Subscription, subscriptions[0]);
-        sourceBroker.raise(MessageType.Subscription, subscriptions[1]);
-        sourceBroker.raise(MessageType.Subscription, subscriptions[2]);
-        sourceBroker.raise(MessageType.Subscribers, message);
+        sourceBroker.raise("Subscription", subscriptions[0]);
+        sourceBroker.raise("Subscription", subscriptions[1]);
+        sourceBroker.raise("Subscription", subscriptions[2]);
+        sourceBroker.raise("Subscribers", message);
 
-        expect(sourceBroker.hasSent(MessageType.FilteredSubscribers, [ new Address("127.0.0.1", 8080), new Address("127.0.0.1", 8082) ])).toBeTruthy();
+        expect(sourceBroker.hasSent("FilteredSubscribers", [ new Address("127.0.0.1", 8080), new Address("127.0.0.1", 8082) ])).toBeTruthy();
     });
 
     it("The subscriber list is filtered by tags when subscriptions have at least one tag", () =>
@@ -306,12 +305,12 @@ describe("ChordRoutingStrategy", () =>
         subscriptions.push(new Subscription(new Address("127.0.0.1", 8082), () => { }, [ "weather", "public information" ], () => true, fakeGenerator));
         var message = new Message("C20, +0.2%", [ "stocks" ], fakeGenerator);
 
-        sourceBroker.raise(MessageType.Subscription, subscriptions[0]);
-        sourceBroker.raise(MessageType.Subscription, subscriptions[1]);
-        sourceBroker.raise(MessageType.Subscription, subscriptions[2]);
-        sourceBroker.raise(MessageType.Subscribers, message);
+        sourceBroker.raise("Subscription", subscriptions[0]);
+        sourceBroker.raise("Subscription", subscriptions[1]);
+        sourceBroker.raise("Subscription", subscriptions[2]);
+        sourceBroker.raise("Subscribers", message);
 
-        expect(sourceBroker.hasSent(MessageType.FilteredSubscribers, [ new Address("127.0.0.1", 8080), new Address("127.0.0.1", 8081) ])).toBeTruthy();
+        expect(sourceBroker.hasSent("FilteredSubscribers", [ new Address("127.0.0.1", 8080), new Address("127.0.0.1", 8081) ])).toBeTruthy();
     });
 
     it("The subscriber list is filtered by filter function when message must be filtered out in one subscription", () =>
@@ -324,12 +323,12 @@ describe("ChordRoutingStrategy", () =>
         subscriptions.push(new Subscription(new Address("127.0.0.1", 8082), () => { }, [ "weather" ], () => true, fakeGenerator));
         var message = new Message("rainy", [ "weather", "public information" ], fakeGenerator);
 
-        sourceBroker.raise(MessageType.Subscription, subscriptions[0]);
-        sourceBroker.raise(MessageType.Subscription, subscriptions[1]);
-        sourceBroker.raise(MessageType.Subscription, subscriptions[2]);
-        sourceBroker.raise(MessageType.Subscribers, message);
+        sourceBroker.raise("Subscription", subscriptions[0]);
+        sourceBroker.raise("Subscription", subscriptions[1]);
+        sourceBroker.raise("Subscription", subscriptions[2]);
+        sourceBroker.raise("Subscribers", message);
 
-        expect(sourceBroker.hasSent(MessageType.FilteredSubscribers, [ new Address("127.0.0.1", 8080), new Address("127.0.0.1", 8082) ])).toBeTruthy();
+        expect(sourceBroker.hasSent("FilteredSubscribers", [ new Address("127.0.0.1", 8080), new Address("127.0.0.1", 8082) ])).toBeTruthy();
     });
 
     it("The subscriber list is filtered by filter function when message must be filtered out in two subscriptions", () =>
@@ -342,11 +341,11 @@ describe("ChordRoutingStrategy", () =>
         subscriptions.push(new Subscription(new Address("127.0.0.1", 8082), () => { }, [ "weather" ], () => true, fakeGenerator));
         var message = new Message("rainy", [ "weather", "public information" ], fakeGenerator);
 
-        sourceBroker.raise(MessageType.Subscription, subscriptions[0]);
-        sourceBroker.raise(MessageType.Subscription, subscriptions[1]);
-        sourceBroker.raise(MessageType.Subscription, subscriptions[2]);
-        sourceBroker.raise(MessageType.Subscribers, message);
+        sourceBroker.raise("Subscription", subscriptions[0]);
+        sourceBroker.raise("Subscription", subscriptions[1]);
+        sourceBroker.raise("Subscription", subscriptions[2]);
+        sourceBroker.raise("Subscribers", message);
 
-        expect(sourceBroker.hasSent(MessageType.FilteredSubscribers, [ new Address("127.0.0.1", 8082) ])).toBeTruthy();
+        expect(sourceBroker.hasSent("FilteredSubscribers", [ new Address("127.0.0.1", 8082) ])).toBeTruthy();
     });
 });

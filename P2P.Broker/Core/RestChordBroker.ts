@@ -1,6 +1,5 @@
 ﻿import IAddress = require("../../P2P/Interfaces/IAddress");
 import IBroker = require("../Interfaces/IBroker");
-import MessageType = require("../Enumerations/MessageType");
 
 class RestChordBroker implements IBroker
 {
@@ -8,9 +7,11 @@ class RestChordBroker implements IBroker
     {
     }
 
-    public send(message: MessageType, data: any): void { }
+    public sendFromStrategy(destination: IAddress, message: string, data: any): any { }
 
-    public receive(callback: (type: MessageType, data: any) => void): void { }
+    public handleToStrategy(callback: (message: string, data: any) => any): any { }
+
+    public handleFromNetwork(message: string, data: any): any { }
 }
 
 export = RestChordBroker;
