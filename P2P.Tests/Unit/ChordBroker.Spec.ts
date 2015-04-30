@@ -25,7 +25,7 @@ import IAddress = require("../../P2P/Interfaces/IAddress");
 
 
 
-// TODO When unsubscribed, the peer does not receive any messages that match the old subscription.
+
 
 // TODO When receiving Message,
 // TODO When receiving Subscription,

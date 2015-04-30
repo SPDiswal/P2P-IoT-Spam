@@ -31,6 +31,7 @@ import IAddress = require("../../P2P/Interfaces/IAddress");
 // DONE The subscriber list is filtered by tags when subscriptions have at least one tag.
 // DONE The subscriber list is filtered by filter function when message must be filtered out in one subscription.
 // DONE The subscriber list is filtered by filter function when message must be filtered out in two subscriptions.
+// DONE When unsubscribed, the peer does not receive any messages that match the old subscription.
 
 // TODO Upon subscribing, the peer receives all stored messages that match the subscription (send RetrieveAllMessages).
 // TODO A peer has a limit on the number of recent messages to remember (to avoid duplicates).
@@ -347,5 +348,25 @@ describe("SubscriberListRoutingStrategy", () =>
         sourceBroker.raise("Subscribers", message);
 
         expect(sourceBroker.hasSent("FilteredSubscribers", [ new Address("127.0.0.1", 8082) ])).toBeTruthy();
+    });
+
+    it("When unsubscribed, the peer does not receive any messages that match the old subscription.", () =>
+    {
+        var hasBeenInvoked = [ false, false ];
+        var subscriptions: Array<Subscription> = [ ];
+
+        var fakeGenerator = new FakeGuidGenerator([ "0", "1", "2" ]);
+
+        subscriptions.push(new Subscription(sourceAddress, () => { hasBeenInvoked[0] = true; }, [ "weather" ], () => true, fakeGenerator));
+        subscriptions.push(new Subscription(sourceAddress, () => { hasBeenInvoked[1] = true; }, [ "public information" ], () => true, fakeGenerator));
+
+        var message = new Message("rainy", [ "weather", "public information" ], fakeGenerator);
+
+        strategy.subscribe(subscriptions[0]);
+        strategy.subscribe(subscriptions[1]);
+        strategy.unsubscribe("1");
+        sourceBroker.raise("Message", message);
+
+        expect(hasBeenInvoked[0] && !hasBeenInvoked[1]).toBeTruthy();
     });
 });

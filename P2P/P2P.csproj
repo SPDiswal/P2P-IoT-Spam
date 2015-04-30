@@ -39,6 +39,7 @@
     <TypeScriptCompile Include="Interfaces\IMessage.ts" />
     <TypeScriptCompile Include="Interfaces\ISubscription.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
+    <TypeScriptCompile Include="Strategies\SpanningTreeRoutingStrategy.ts" />
     <TypeScriptCompile Include="Strategies\SubscriberListRoutingStrategy.ts" />
     <TypeScriptCompile Include="Utilities\ArrayUtilities.ts" />
     <TypeScriptCompile Include="Utilities\GuidGenerator.ts" />

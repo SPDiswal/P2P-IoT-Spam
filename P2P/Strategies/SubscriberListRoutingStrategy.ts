@@ -13,36 +13,36 @@ class SubscriberListRoutingStrategy implements IRoutingStrategy
 
     constructor(private address: IAddress, private broker: IBroker)
     {
-        this.broker.handleToStrategy((messageType: string, data: any): any =>
+        this.broker.handleToStrategy((message: string, messageData: any): any =>
         {
-            switch (messageType)
+            switch (message)
             {
                 case "Message":
                     this._localSubscriptions.forEach((subscription: ISubscription) =>
                     {
-                        if (!this.recentMessages.hasOwnProperty(data.id))
-                            this.recentMessages[data.id] = <Array<string>>[ ];
+                        if (!this.recentMessages.hasOwnProperty(messageData.id))
+                            this.recentMessages[messageData.id] = <Array<string>>[ ];
 
-                        if (!this.isInArray(this.recentMessages[data.id], subscription.id))
+                        if (!this.isInArray(this.recentMessages[messageData.id], subscription.id))
                         {
-                            subscription.callback(data);
-                            this.recentMessages[data.id].push(subscription.id);
+                            subscription.callback(messageData);
+                            this.recentMessages[messageData.id].push(subscription.id);
                         }
                     });
 
                     break;
 
                 case "Subscription":
-                    var subscription = <ISubscription>data;
+                    var subscription = <ISubscription>messageData;
                     this._subscriberList.push(subscription);
                     break;
 
                 case "Unsubscription":
-                    this._subscriberList = this._subscriberList.filter(value => value.id !== data);
+                    this._subscriberList = this._subscriberList.filter(subscription => subscription.id !== messageData);
                     break;
 
                 case "Subscribers":
-                    var filteredSubscribers = this._subscriberList.filter(value => ArrayUtilities.intersection(value.tags, <Array<string>>data.tags).length > 0 && value.filter(data));
+                    var filteredSubscribers = this._subscriberList.filter(subscription => ArrayUtilities.intersection(subscription.tags, <Array<string>>messageData.tags).length > 0 && subscription.filter(messageData));
                     this.broker.sendFromStrategy(address, "FilteredSubscribers", filteredSubscribers);
                     break;
             }
@@ -69,8 +69,7 @@ class SubscriberListRoutingStrategy implements IRoutingStrategy
 
     public unsubscribe(id: string): void
     {
-        // TODO: _localSubscriptions.remove(subscription) via .filter;
-
+        this._localSubscriptions = this._localSubscriptions.filter(subscription => subscription.id !== id);
         this.broker.sendFromStrategy(this.address, "Unsubscribe", id);
     }
 

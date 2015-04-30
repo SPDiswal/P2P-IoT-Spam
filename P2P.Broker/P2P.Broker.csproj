@@ -32,6 +32,7 @@
     <TypeScriptCompile Include="Core\RestChordBroker.ts" />
     <TypeScriptCompile Include="Enumerations\MessageType.ts" />
     <TypeScriptCompile Include="Interfaces\IBroker.ts" />
+    <TypeScriptCompile Include="Interfaces\IChordPeer.ts" />
   </ItemGroup>
   <ItemGroup />
   <PropertyGroup>
