@@ -4,6 +4,7 @@ interface IBroker
 {
     // Outgoing messages from routing strategy to low-level network (e.g. Chord peer) via IBroker.
     // Called by routing strategy, may expect return value from broker (delivered by low-level network).
+    // Remember to hash before lookup.
     sendFromStrategy(destination: IAddress, message: string, data: any): any;
 
     // For example:

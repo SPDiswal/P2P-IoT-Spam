@@ -33,6 +33,8 @@ import IAddress = require("../../P2P/Interfaces/IAddress");
 // DONE The subscriber list is filtered by filter function when message must be filtered out in two subscriptions.
 // DONE When unsubscribed, the peer does not receive any messages that match the old subscription.
 
+// TODO 
+
 // TODO Upon subscribing, the peer receives all stored messages that match the subscription (send RetrieveAllMessages).
 // TODO A peer has a limit on the number of recent messages to remember (to avoid duplicates).
 // :::::::::::::::::::
