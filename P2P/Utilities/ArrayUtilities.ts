@@ -10,7 +10,7 @@
             {
                 return false;
             }
-            else if (first[i].hasOwnProperty("equals"))
+            else if ((first[i].hasOwnProperty("equals") || first[i].constructor.prototype.hasOwnProperty("equals")))
             {
                 if (!(<any>first[i]).equals(second[i])) return false;
             }
@@ -26,6 +26,25 @@
     public static intersection<T>(first: Array<T>, second: Array<T>): Array<T>
     {
         return first.filter(value => (second.indexOf(value) !== -1));
+    }
+
+    public static distinct<T>(array: Array<T>): Array<T>
+    {
+        return array.filter((value, index) => ArrayUtilities.indexOfWithEquals(array, value) === index);
+    }
+
+    public static indexOfWithEquals<T>(array: Array<T>, value: T): number
+    {
+        for (var i = 0; i < array.length; i++)
+        {
+            if (array[i] === null)
+                continue;
+
+            if (((array[i].hasOwnProperty("equals") || array[i].constructor.prototype.hasOwnProperty("equals")) && (<any>array[i]).equals(value)) || array[i] === value)
+                return i;
+        }
+
+        return -1;
     }
 }
 

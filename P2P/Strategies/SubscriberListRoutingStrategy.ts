@@ -4,6 +4,7 @@ import IMessage = require("../Interfaces/IMessage");
 import IRoutingStrategy = require("../Interfaces/IRoutingStrategy");
 import ISubscription = require("../Interfaces/ISubscription");
 import ArrayUtilities = require("../Utilities/ArrayUtilities");
+import Address = require("../Core/Address");
 
 class SubscriberListRoutingStrategy implements IRoutingStrategy
 {
@@ -32,16 +33,16 @@ class SubscriberListRoutingStrategy implements IRoutingStrategy
 
                     break;
 
-                case "Subscription":
+                case "Subscription":        // TODO Renamed to AddSubscription
                     var subscription = <ISubscription>messageData;
                     this._subscriberList.push(subscription);
                     break;
 
-                case "Unsubscription":
-                    this._subscriberList = this._subscriberList.filter(subscription => subscription.id !== messageData);
+                case "Unsubscription":      // TODO Renamed to RemoveSubscription
+                    this._subscriberList = this._subscriberList.filter(s => s.id !== messageData);
                     break;
 
-                case "Subscribers":
+                case "Subscribers":         // TODO Renamed to GetSubscriberList or something like that :)
                     var filteredSubscribers = this._subscriberList.filter(subscription => ArrayUtilities.intersection(subscription.tags, <Array<string>>messageData.tags).length > 0 && subscription.filter(messageData));
                     this.broker.sendFromStrategy(address, "FilteredSubscribers", filteredSubscribers);
                     break;
@@ -58,19 +59,76 @@ class SubscriberListRoutingStrategy implements IRoutingStrategy
 
     public publish(message: IMessage): void
     {
-        this.broker.sendFromStrategy(this.address, "Publish", message);
+        var responsiblePeers: Array<IAddress> = [ ];
+        var subscribers: Array<IAddress> = [ ];
+
+        // Looks up all responsible peers of the message tags.
+        message.tags.forEach((tag: string) =>
+        {
+            responsiblePeers.push(this.broker.sendFromStrategy(this.address, "Lookup", tag));
+        });
+
+        // Retrieves subscriber list from all responsible peers.
+        responsiblePeers.forEach((peer: IAddress) =>
+        {
+            subscribers = subscribers.concat(this.broker.sendFromStrategy(peer, "GetSubscriberList", message));
+        });
+
+        subscribers = ArrayUtilities.distinct(subscribers);
+
+        // Sends message to all subscribers.
+        subscribers.forEach((subscriber: IAddress) =>
+        {
+            this.broker.sendFromStrategy(subscriber, "Message", message);
+        });
     }
 
-    public subscribe(subscription: ISubscription): void
+    public subscribe(subscription: ISubscription, retrieveOldMessages?: boolean): void
     {
+        var responsiblePeers: Array<IAddress> = [ ];
+
+        // Looks up all responsible peers of the subscription tags.
+        subscription.tags.forEach((tag: string) =>
+        {
+            responsiblePeers.push(this.broker.sendFromStrategy(this.address, "Lookup", tag));
+        });
+
+        // Adds subscription to subscriber lists of all responsible peers.
+        responsiblePeers.forEach((peer: IAddress) =>
+        {
+            this.broker.sendFromStrategy(peer, "AddSubscription", subscription);
+        });
+
+        // Retrieves all previously published messages from all responsible peers.
+        if (retrieveOldMessages)
+        {
+            responsiblePeers.forEach((peer: IAddress) =>
+            {
+                this.broker.sendFromStrategy(peer, "RetrieveAllMessages", subscription);
+            });
+        }
+
         this._localSubscriptions.push(subscription);
-        this.broker.sendFromStrategy(this.address, "Subscribe", subscription);
     }
 
     public unsubscribe(id: string): void
     {
-        this._localSubscriptions = this._localSubscriptions.filter(subscription => subscription.id !== id);
-        this.broker.sendFromStrategy(this.address, "Unsubscribe", id);
+        var responsiblePeers: Array<IAddress> = [ ];
+        var subscription = this._localSubscriptions.filter(s => s.id === id)[0];
+
+        // Looks up all responsible peers of the subscription tags.
+        subscription.tags.forEach((tag: string) =>
+        {
+            responsiblePeers.push(this.broker.sendFromStrategy(this.address, "Lookup", tag));
+        });
+
+        // Removes subscription from subscriber lists of all responsible peers.
+        responsiblePeers.forEach((peer: IAddress) =>
+        {
+            this.broker.sendFromStrategy(peer, "RemoveSubscription", id);
+        });
+
+        this._localSubscriptions = this._localSubscriptions.filter(s => s.id !== id);
     }
 
     public join(domain: IAddress): void

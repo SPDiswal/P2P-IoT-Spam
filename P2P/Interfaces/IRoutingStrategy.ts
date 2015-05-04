@@ -5,7 +5,7 @@ import IAddress = require("./IAddress");
 interface IRoutingStrategy
 {
     publish(message: IMessage): void;
-    subscribe(subscription: ISubscription): void;
+    subscribe(subscription: ISubscription, retrieveOldMessages?: boolean): void;
     unsubscribe(id: string): void;
     join(domain: IAddress): void;
 }
