@@ -11,8 +11,6 @@ import IAddress = require("../../P2P/Interfaces/IAddress");
 // :::: TEST LIST ::::
 // DONE A peer can join peer at 127.0.0.1:8081.
 // DONE A peer can join peer at 127.0.0.1:8082.
-// DONE A peer can publish a message with id 0 ("sunny" in Weather).
-// DONE A peer can publish a message with id 1 ("rainy" in Weather, Public information).
 // DONE A peer can subscribe to a subscription with id 0, a single tag and a filter.
 // DONE A peer can subscribe to a subscription with id 1, multiple tags and a filter.
 // DONE The subscription callback is invoked when one subscription matches the message.
@@ -33,7 +31,8 @@ import IAddress = require("../../P2P/Interfaces/IAddress");
 // DONE The subscriber list is filtered by filter function when message must be filtered out in two subscriptions.
 // DONE When unsubscribed, the peer does not receive any messages that match the old subscription.
 
-// TODO 
+// TODO When publishing a message with one tag ("Weather") it sends one "lookup" to broker.
+// TODO When publishing a message with two tags ("Weather", "Public information") it sends two "lookup"'s to broker.
 
 // TODO Upon subscribing, the peer receives all stored messages that match the subscription (send RetrieveAllMessages).
 // TODO A peer has a limit on the number of recent messages to remember (to avoid duplicates).
@@ -66,27 +65,28 @@ describe("SubscriberListRoutingStrategy", () =>
         expect(sourceBroker.hasSent("Join", targetAddress)).toBeTruthy();
     });
 
-    it("Can publish a message with id 0 (\"sunny\" in Weather)", () =>
+    it("When publishing a message with one tag ('Weather') it sends one 'lookup' to broker.", () =>
     {
         var fakeGenerator = new FakeGuidGenerator([ "0" ]);
         var message = new Message("sunny", [ "weather" ], fakeGenerator);
 
         strategy.publish(message);
 
-        expect(sourceBroker.hasSent("Publish", message)).toBeTruthy();
+        expect(sourceBroker.hasSent("lookup", "Weather")).toBeTruthy();
     });
 
-    it("Can publish a message with id 1 (\"rainy\" in Weather, Public information)", () =>
+    it("When publishing a message with two tags ('Weather', 'Public information') it sends two 'lookup''s to broker.",() =>
     {
         var fakeGenerator = new FakeGuidGenerator([ "1" ]);
         var message = new Message("rainy", [ "weather", "public information" ], fakeGenerator);
 
         strategy.publish(message);
 
-        expect(sourceBroker.hasSent("Publish", message)).toBeTruthy();
+        expect(sourceBroker.hasSent("lookup", "Weather")).toBeTruthy();
+        expect(sourceBroker.hasSent("lookup", "public information")).toBeTruthy();
     });
 
-    it("Can subscribe to a subscription with id 0, a single tag and a filter", () =>
+    it("Can subscribe to a subscription with id 0, a single tag and a filter",() =>
     {
         var fakeGenerator = new FakeGuidGenerator([ "0" ]);
         var subscription = new Subscription(sourceAddress, () => { }, [ "weather" ], () => true, fakeGenerator);
