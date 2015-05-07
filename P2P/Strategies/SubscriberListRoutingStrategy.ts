@@ -4,7 +4,6 @@ import IMessage = require("../Interfaces/IMessage");
 import IRoutingStrategy = require("../Interfaces/IRoutingStrategy");
 import ISubscription = require("../Interfaces/ISubscription");
 import ArrayUtilities = require("../Utilities/ArrayUtilities");
-import Address = require("../Core/Address");
 
 class SubscriberListRoutingStrategy implements IRoutingStrategy
 {
@@ -33,19 +32,18 @@ class SubscriberListRoutingStrategy implements IRoutingStrategy
 
                     break;
 
-                case "Subscription":        // TODO Renamed to AddSubscription
+                case "AddSubscription":
                     var subscription = <ISubscription>messageData;
                     this._subscriberList.push(subscription);
                     break;
 
-                case "Unsubscription":      // TODO Renamed to RemoveSubscription
+                case "RemoveSubscription":
                     this._subscriberList = this._subscriberList.filter(s => s.id !== messageData);
                     break;
 
-                case "Subscribers":         // TODO Renamed to GetSubscriberList or something like that :)
+                case "GetSubscriberList":
                     var filteredSubscribers = this._subscriberList.filter(subscription => ArrayUtilities.intersection(subscription.tags, <Array<string>>messageData.tags).length > 0 && subscription.filter(messageData));
-                    this.broker.sendFromStrategy(address, "FilteredSubscribers", filteredSubscribers);
-                    break;
+                    return filteredSubscribers;
             }
 
             return <any>null;
@@ -60,7 +58,7 @@ class SubscriberListRoutingStrategy implements IRoutingStrategy
     public publish(message: IMessage): void
     {
         var responsiblePeers: Array<IAddress> = [ ];
-        var subscribers: Array<IAddress> = [ ];
+        var subscribers: Array<ISubscription> = [ ];
 
         // Looks up all responsible peers of the message tags.
         message.tags.forEach((tag: string) =>
@@ -77,9 +75,9 @@ class SubscriberListRoutingStrategy implements IRoutingStrategy
         subscribers = ArrayUtilities.distinct(subscribers);
 
         // Sends message to all subscribers.
-        subscribers.forEach((subscriber: IAddress) =>
+        subscribers.forEach((subscriber: ISubscription) =>
         {
-            this.broker.sendFromStrategy(subscriber, "Message", message);
+            this.broker.sendFromStrategy(subscriber.address, "Message", message);
         });
     }
 
