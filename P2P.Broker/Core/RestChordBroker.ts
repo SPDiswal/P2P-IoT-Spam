@@ -27,15 +27,15 @@ class RestChordBroker implements IBroker
                 break;
 
             case "RetrieveAllMessages":
-                this.request.get(destination.host + ":" + destination.port + "/all/" + <string>data);
+                this.request.get(destination.host + ":" + destination.port + "/messages/" + <string>data);
                 break;
 
             case "Store":
-                this.request.put(destination.host + ":" + destination.port + "/store", JSON.stringify(<IMessage>data));
+                this.request.put(destination.host + ":" + destination.port + "/messages", JSON.stringify(<IMessage>data));
                 break;
 
             case "Discard":
-                this.request.delete(destination.host + ":" + destination.port + "/discard");
+                this.request.delete(destination.host + ":" + destination.port + "/messages");
                 break;
 
             default:

@@ -67,7 +67,7 @@ describe("RestChordBroker", () =>
         var tag = "weather";
         broker.sendFromStrategy(sourceAddresses[0], "RetrieveAllMessages", tag);
 
-        expect(fakeDispatcher.hasSentGet("127.0.0.1:8080/all/" + tag)).toBeTruthy();
+        expect(fakeDispatcher.hasSentGet("127.0.0.1:8080/messages/" + tag)).toBeTruthy();
     });
 
     it("When handling an outgoing RetrieveAllMessages('public information') from strategy, it sends a GET /all/public information HTTP request RESTfully to the Chord peer at 127.0.0.1:8083.", () =>
@@ -75,7 +75,7 @@ describe("RestChordBroker", () =>
         var tag = "public information";
         broker.sendFromStrategy(sourceAddresses[1], "RetrieveAllMessages", tag);
 
-        expect(fakeDispatcher.hasSentGet("127.0.0.1:8083/all/" + tag)).toBeTruthy();
+        expect(fakeDispatcher.hasSentGet("127.0.0.1:8083/messages/" + tag)).toBeTruthy();
     });
 
     it("When handling an outgoing Store from strategy, it sends a PUT /store HTTP request with sunny-message RESTfully to the Chord peer at 127.0.0.1:8080.", () =>
@@ -85,7 +85,7 @@ describe("RestChordBroker", () =>
 
         broker.sendFromStrategy(sourceAddresses[0], "Store", message);
 
-        expect(fakeDispatcher.hasSentPut("127.0.0.1:8080/store", JSON.stringify(message))).toBeTruthy();
+        expect(fakeDispatcher.hasSentPut("127.0.0.1:8080/messages", JSON.stringify(message))).toBeTruthy();
     });
 
     it("When handling an outgoing Store from strategy, it sends a PUT /store HTTP request with rainy-message RESTfully to the Chord peer at 127.0.0.1:8083.", () =>
@@ -95,21 +95,21 @@ describe("RestChordBroker", () =>
 
         broker.sendFromStrategy(sourceAddresses[1], "Store", message);
 
-        expect(fakeDispatcher.hasSentPut("127.0.0.1:8083/store", JSON.stringify(message))).toBeTruthy();
+        expect(fakeDispatcher.hasSentPut("127.0.0.1:8083/messages", JSON.stringify(message))).toBeTruthy();
     });
 
     it("When handling an outgoing Discard from strategy, it sends a DELETE /discard HTTP request RESTfully to the Chord peer at 127.0.0.1:8080.", () =>
     {
         broker.sendFromStrategy(sourceAddresses[0], "Discard", "");
 
-        expect(fakeDispatcher.hasSentDelete("127.0.0.1:8080/discard")).toBeTruthy();
+        expect(fakeDispatcher.hasSentDelete("127.0.0.1:8080/messages")).toBeTruthy();
     });
 
     it("When handling an outgoing Discard from strategy, it sends a DELETE /discard HTTP request RESTfully to the Chord peer at 127.0.0.1:8083.", () =>
     {
         broker.sendFromStrategy(sourceAddresses[1], "Discard", "");
 
-        expect(fakeDispatcher.hasSentDelete("127.0.0.1:8083/discard")).toBeTruthy();
+        expect(fakeDispatcher.hasSentDelete("127.0.0.1:8083/messages")).toBeTruthy();
     });
 
     it("When handling an outgoing AddSubscription from strategy, it sends a PUT /message with custom data HTTP request RESTfully to the Chord peer at 127.0.0.1:8080.", () =>

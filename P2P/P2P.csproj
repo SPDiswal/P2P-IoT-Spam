@@ -31,6 +31,7 @@
   <ItemGroup>
     <TypeScriptCompile Include="Core\Address.ts" />
     <TypeScriptCompile Include="Core\Message.ts" />
+    <TypeScriptCompile Include="Core\SpamFramework.ts" />
     <TypeScriptCompile Include="Core\Subscription.ts" />
     <TypeScriptCompile Include="Interfaces\IAddress.ts" />
     <TypeScriptCompile Include="Interfaces\IFramework.ts" />
@@ -38,7 +39,11 @@
     <TypeScriptCompile Include="Interfaces\IRoutingStrategy.ts" />
     <TypeScriptCompile Include="Interfaces\IMessage.ts" />
     <TypeScriptCompile Include="Interfaces\ISubscription.ts" />
+    <TypeScriptCompile Include="Scripts\typings\body-parser\body-parser.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\crypto\crypto.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\express\express.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\q\q.d.ts" />
     <TypeScriptCompile Include="Strategies\SpanningTreeRoutingStrategy.ts" />
     <TypeScriptCompile Include="Strategies\SubscriberListRoutingStrategy.ts" />
     <TypeScriptCompile Include="Utilities\ArrayUtilities.ts" />
