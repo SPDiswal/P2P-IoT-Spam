@@ -1,13 +1,13 @@
 ﻿import Crypto = require("crypto");
 import Express = require("express");
-import Constants = require("./constants");
+import Constants = require("../Core/Constants");
 
 class Helpers
 {
-    public static hash(address: string)
+    public static hash(value: string)
     {
         var sha1 = Crypto.createHash("sha1");
-        sha1.update(address);
+        sha1.update(value);
         return parseInt("0x" + sha1.digest("hex").slice(0, Math.floor(Constants.SpaceSize / 4)));
     }
 

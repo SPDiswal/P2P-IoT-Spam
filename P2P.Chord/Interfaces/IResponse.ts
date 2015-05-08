@@ -3,3 +3,5 @@
     response: any;
     statusCode: number;
 }
+
+export = IResponse;

@@ -252,7 +252,7 @@ describe("SubscriberListRoutingStrategy", () =>
 
         expect(sourceBroker.hasSent(sourceAddress, "Lookup", "weather")).toBeTruthy();
         expect(sourceBroker.hasSent(responsiblePeerAddress, "AddSubscription", subscription)).toBeTruthy();
-        expect(sourceBroker.hasSent(responsiblePeerAddress, "RetrieveAllMessages", subscription)).toBeTruthy();
+        expect(sourceBroker.hasSent(responsiblePeerAddress, "RetrieveAllMessages", "weather")).toBeTruthy();
     });
 
     it("When subscribing to two tags ('Weather', 'Public information'), it sends via broker two Lookups to itself and two AddSubscribers to responsible peers.", () =>
@@ -287,8 +287,8 @@ describe("SubscriberListRoutingStrategy", () =>
         expect(sourceBroker.hasSent(sourceAddress, "Lookup", "public information")).toBeTruthy();
         expect(sourceBroker.hasSent(responsiblePeerAddresses[0], "AddSubscription", subscription)).toBeTruthy();
         expect(sourceBroker.hasSent(responsiblePeerAddresses[1], "AddSubscription", subscription)).toBeTruthy();
-        expect(sourceBroker.hasSent(responsiblePeerAddresses[0], "RetrieveAllMessages", subscription)).toBeTruthy();
-        expect(sourceBroker.hasSent(responsiblePeerAddresses[1], "RetrieveAllMessages", subscription)).toBeTruthy();
+        expect(sourceBroker.hasSent(responsiblePeerAddresses[0], "RetrieveAllMessages", "weather")).toBeTruthy();
+        expect(sourceBroker.hasSent(responsiblePeerAddresses[1], "RetrieveAllMessages", "public information")).toBeTruthy();
     });
 
     it("When unsubscribing to subscription with one tag ('Weather'), it sends via broker one Lookup to itself and one RemoveSubscription to responsible peer.", () =>

@@ -32,8 +32,15 @@
   <ItemGroup>
     <TypeScriptCompile Include="Fakes\FakeBroker.ts" />
     <TypeScriptCompile Include="Fakes\FakeGuidGenerator.ts" />
+    <TypeScriptCompile Include="Fakes\FakeRequestDispatcher.ts" />
     <TypeScriptCompile Include="Integration\Guid.Spec.ts" />
+    <TypeScriptCompile Include="Scripts\typings\body-parser\body-parser.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\crypto\crypto.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\express\express.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\jasmine\jasmine.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\q\q.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\sqlite3\sqlite3.d.ts" />
     <TypeScriptCompile Include="Unit\RestChordBroker.Spec.ts" />
     <TypeScriptCompile Include="Unit\SubscriberListRoutingStrategy.Spec.ts" />
   </ItemGroup>

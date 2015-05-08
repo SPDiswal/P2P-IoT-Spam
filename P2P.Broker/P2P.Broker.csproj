@@ -33,6 +33,12 @@
     <TypeScriptCompile Include="Enumerations\MessageType.ts" />
     <TypeScriptCompile Include="Interfaces\IBroker.ts" />
     <TypeScriptCompile Include="Interfaces\IChordPeer.ts" />
+    <TypeScriptCompile Include="Scripts\typings\body-parser\body-parser.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\crypto\crypto.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\express\express.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\q\q.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\sqlite3\sqlite3.d.ts" />
   </ItemGroup>
   <ItemGroup />
   <PropertyGroup>

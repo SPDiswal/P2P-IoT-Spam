@@ -1,16 +1,14 @@
-﻿// TODO Visualisation.
-// TODO HTML beautification.
-
-import BodyParser = require("body-parser");
+﻿import BodyParser = require("body-parser");
 import Express = require("express");
 import File = require("fs");
 import Q = require("q");
 import SQLite = require("sqlite3");
 
-import Constants = require("./constants");
-import Helpers = require("./helpers");
-import Peer = require("./peer");
-import Request = require("./request");
+import Constants = require("./Constants");
+import Helpers = require("../Utilities/Helpers");
+import Peer = require("./Peer");
+import RequestDispatcher = require("../Utilities/RequestDispatcher");
+import IResponse = require("../Interfaces/IResponse");
 
 class Chord
 {
@@ -685,7 +683,7 @@ class Chord
         {
             ((j: number) =>
             {
-                Request.get(this.resources[j].url).then(r =>
+                new RequestDispatcher().get(this.resources[j].url).then(r =>
                 {
                     var data = r.response;
 

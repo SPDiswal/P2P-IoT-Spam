@@ -7,6 +7,8 @@ import ArrayUtilities = require("../Utilities/ArrayUtilities");
 
 class SubscriberListRoutingStrategy implements IRoutingStrategy
 {
+    // TODO Replicate subscriber list.
+
     private recentMessages: any = { };
     private _subscriberList: Array<ISubscription> = [ ];
     private _localSubscriptions: Array<ISubscription> = [ ];
@@ -83,26 +85,26 @@ class SubscriberListRoutingStrategy implements IRoutingStrategy
 
     public subscribe(subscription: ISubscription, retrieveOldMessages?: boolean): void
     {
-        var responsiblePeers: Array<IAddress> = [ ];
+        var responsiblePeers: any = { };
 
         // Looks up all responsible peers of the subscription tags.
         subscription.tags.forEach((tag: string) =>
         {
-            responsiblePeers.push(this.broker.sendFromStrategy(this.address, "Lookup", tag));
+            responsiblePeers[tag] = this.broker.sendFromStrategy(this.address, "Lookup", tag);
         });
 
         // Adds subscription to subscriber lists of all responsible peers.
-        responsiblePeers.forEach((peer: IAddress) =>
+        subscription.tags.forEach((tag: string) =>
         {
-            this.broker.sendFromStrategy(peer, "AddSubscription", subscription);
+            this.broker.sendFromStrategy(responsiblePeers[tag], "AddSubscription", subscription);
         });
 
         // Retrieves all previously published messages from all responsible peers.
         if (retrieveOldMessages)
         {
-            responsiblePeers.forEach((peer: IAddress) =>
+            subscription.tags.forEach((tag: string) =>
             {
-                this.broker.sendFromStrategy(peer, "RetrieveAllMessages", subscription);
+                this.broker.sendFromStrategy(responsiblePeers[tag], "RetrieveAllMessages", tag);
             });
         }
 

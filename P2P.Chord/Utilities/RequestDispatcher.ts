@@ -1,10 +1,12 @@
 ﻿import Http = require("http");
 import Https = require("https");
 import Q = require("q");
+import IRequestDispatcher = require("../Interfaces/IRequestDispatcher");
+import IResponse = require("../Interfaces/IResponse");
 
-class RequestDispatcher
+class RequestDispatcher implements IRequestDispatcher
 {
-    public static send(method: string, url: string, data: string = ""): Q.Promise<IResponse>
+    private send(method: string, url: string, data: string = ""): Q.Promise<IResponse>
     {
         var options: any = { method: method };
         var protocol = "http";
@@ -71,13 +73,13 @@ class RequestDispatcher
         return deferred.promise;
     }
 
-    public static "delete"(url: string, data: string = "") { return RequestDispatcher.send("DELETE", url, data); }
+    public "delete"(url: string, data: string = "") { return this.send("DELETE", url, data); }
 
-    public static "get"(url: string, data: string = "") { return RequestDispatcher.send("GET", url, data); }
+    public "get"(url: string, data: string = "") { return this.send("GET", url, data); }
 
-    public static post(url: string, data: string = "") { return RequestDispatcher.send("POST", url, data); }
+    public post(url: string, data: string = "") { return this.send("POST", url, data); }
 
-    public static put(url: string, data: string = "") { return RequestDispatcher.send("PUT", url, data); }
+    public put(url: string, data: string = "") { return this.send("PUT", url, data); }
 }
 
 export = RequestDispatcher;
