@@ -17,6 +17,8 @@ import Subscription = require("../../P2P/Core/Subscription");
 // DONE When publishing a message with one tag ("Weather") it sends "Message"'s to all subscribing peers via broker.
 // DONE When publishing a message with two tags ("Weather", "Public information") it sends "Message"'s to all subscribing peers via broker.
 // DONE When publishing a message with two tags where a peer subscribes individually two both tags it only sends a single "Message" to that peer.
+// TODO When publishing a message, it sends Store to its broker (which puts the message into the Chord network storage system).
+// TODO When publishing a message, it sends Discard to its broker (which asks the Chord network to deletes messages from storage system that have exceeded their lifetime, e.g. by a period of time - retain messages younger than 14 days - or by the number of stored messages - retain 1000 most recent messages).
 // DONE When subscribing to one tag ('Weather'), it sends via broker one Lookup to itself and one AddSubscriber to responsible peer.
 // DONE When subscribing to one tag ('Weather') and signalling retrieval of old messages, it sends via broker one Lookup to itself, one AddSubscriber to responsible peer and one RetrieveAllMessages to responsible peer.
 // DONE When subscribing to two tags ('Weather', 'Public information'), it sends via broker two Lookups to itself and two AddSubscribers to responsible peers.
