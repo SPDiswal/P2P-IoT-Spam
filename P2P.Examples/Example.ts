@@ -47,15 +47,17 @@ class Example
 
         app.post("/publish", jsonParser, (req, res) =>
         {
-            framework.publish(req.body.tags, req.body.contents);
+//            framework.publish(req.body.tags, req.body.contents);
+            framework.publish([ "weather" ], { description: "sunny", temperature: 10, precipitation: 0, wind: "mind-blowing" });
             res.sendStatus(StatusCode.NoContent);
         });
 
-        //        app.post("/subscribe", jsonParser, (req, res) =>
-        //        {
-        //            res.sendStatus(StatusCode.NoContent);
-        //            console.log("New subscription: " + framework.subscribe(req.body.tags, (tags: Array<string>, contents: any) => console.log("New message: " + tags + " " + contents)));
-        //        });
+        app.post("/subscribe", jsonParser, (req, res) =>
+        {
+            res.sendStatus(StatusCode.NoContent);
+            //            console.log("New subscription: " + framework.subscribe(req.body.tags, (tags: Array<string>, contents: any) => console.log("New message: " + tags + " " + contents)));
+            console.log("New subscription: " + framework.subscribe([ "weather" ], (tags: Array<string>, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents))));
+        });
 
         // Adds web interface resources.
         app.get("/", (req, res) => this.getHtml("index", req, res));
@@ -66,9 +68,8 @@ class Example
         app.listen(port, host, () =>
         {
             framework.run();
-            console.log("New subscription: " + framework.subscribe([ "weather" ], (tags: Array<string>, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents))));
-
-            framework.publish([ "weather" ], { description: "sunny", temperature: 10, precipitation: 0, wind: "mind-blowing" });
+            //            console.log("New subscription: " + framework.subscribe([ "weather" ], (tags: Array<string>, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents))));
+            //            setTimeout(() => framework.publish([ "weather" ], { description: "sunny", temperature: 10, precipitation: 0, wind: "mind-blowing" }), 100);
         });
     }
 }

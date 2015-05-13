@@ -115,8 +115,6 @@ class SubscriberListRouter implements IRouter
     public join(domain: Address): void
     {
         this.broker.send(this.address, HttpMethod.Post, RouterMessages.Join, domain);
-
-        // TODO Ask for subscriber lists to be moved to new responsible peer.
     }
 
     // HELPERS: Incoming messages
@@ -124,11 +122,11 @@ class SubscriberListRouter implements IRouter
     {
         var deferred = Q.defer<Array<Subscription>>();
 
-        Q.all<Array<Subscription>>(message.tags.map(tag => this.getResponsibility(this.address, tag))).then(s =>
+        Q.all<Responsibility>(message.tags.map(tag => this.getResponsibility(this.address, tag))).then(r =>
         {
-            var subscribers = ArrayUtilities.distinct(ArrayUtilities.flatten(s));
+            var subscribers = ArrayUtilities.distinct(ArrayUtilities.flatten(r.map(t => <Array<Subscription>>t.data)));
             deferred.resolve(subscribers.filter(s => this.filter(s, message)));
-        }).catch(() => deferred.reject((void 0)));
+        }).catch(() => deferred.resolve([ ]));
 
         return deferred.promise;
     }
@@ -161,7 +159,8 @@ class SubscriberListRouter implements IRouter
         subscription.tags.forEach(tag =>
         {
             this.getResponsibility(this.address, tag)
-                .then(r => this.putResponsibility(this.address, new Responsibility(r.identifier, r.data.concat([ subscription ]))));
+                .then(r => this.putResponsibility(this.address, new Responsibility(r.identifier, r.data.concat([ subscription ]))))
+                .catch(() => this.putResponsibility(this.address, new Responsibility(tag, [ subscription ])));
         });
     }
 

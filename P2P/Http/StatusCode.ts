@@ -6,6 +6,8 @@
 
     public static get BadRequest(): number { return 400; }
 
+    public static get NotFound(): number { return 404; }
+
     public static get InternalServerError(): number { return 500; }
 }
 

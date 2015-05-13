@@ -35,7 +35,6 @@
     <TypeScriptCompile Include="Core\RemoteChordPeer.ts" />
     <TypeScriptCompile Include="Interfaces\IPeer.ts" />
     <TypeScriptCompile Include="Interfaces\IDataRow.ts" />
-    <TypeScriptCompile Include="Core\Peer.ts" />
     <TypeScriptCompile Include="Scripts\typings\body-parser\body-parser.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\crypto\crypto.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\express.d.ts" />

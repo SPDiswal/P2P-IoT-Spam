@@ -9,7 +9,7 @@
     {
         if (!first || !second || first.length !== second.length) return false;
 
-        for (var i = 0; i < this.length; i++)
+        for (var i = 0; i < first.length; i++)
         {
             if (first[i] instanceof Array && second[i] instanceof Array && !this.equals(<any>first[i], <any>second[i]))
                 return false;
@@ -26,7 +26,7 @@
 
     public static find<T>(array: Array<T>, predicate: (element: T) => boolean): T
     {
-        for (var i = 0; i < this.length; i++)
+        for (var i = 0; i < array.length; i++)
             if (predicate(array[i])) return array[i];
 
         return null;
@@ -56,10 +56,10 @@
     {
         for (var i = 0; i < array.length; i++)
         {
-            if (array[i] === null)
-                continue;
-
-            if (((array[i].hasOwnProperty("equals") || array[i].constructor.prototype.hasOwnProperty("equals")) && (<any>array[i]).equals(value)) || array[i] === value)
+            if (array[i] === null) continue;
+            if (((array[i].hasOwnProperty("equals")
+                    || array[i].constructor.prototype.hasOwnProperty("equals"))
+                && (<any>array[i]).equals(value)) || array[i] === value)
                 return i;
         }
 

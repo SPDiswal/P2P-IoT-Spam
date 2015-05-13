@@ -1,6 +1,8 @@
 ﻿import Q = require("q");
 import Promise = Q.Promise;
 
+import Responsibility = require("../../P2P/Common/Responsibility");
+
 interface IPeer
 {
     address: string;
@@ -23,6 +25,14 @@ interface IPeer
     lookup(key: number): Promise<string>;
 
     notify(potentialPredecessor: string): Promise<void>;
+
+    getResponsibility(identifier: string): Promise<Responsibility>;
+
+    getResponsibilities(): Promise<Array<Responsibility>>;
+
+    putResponsibility(responsibility: Responsibility): Promise<void>;
+
+    deleteResponsibility(identifier: string): Promise<void>;
 }
 
 export = IPeer

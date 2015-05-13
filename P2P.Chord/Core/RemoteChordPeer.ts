@@ -7,7 +7,9 @@ import IResponse = require("../../P2P/Http/IResponse");
 import Constants = require("./Constants");
 import Helpers = require("../../P2P/Utilities/Helpers");
 import RequestDispatcher = require("../../P2P/Http/RequestDispatcher");
+import Responsibility = require("../../P2P/Common/Responsibility");
 import StatusCode = require("../../P2P/Http/StatusCode");
+import Subscription = require("../../P2P/Common/Subscription");
 
 class RemoteChordPeer implements IPeer
 {
@@ -80,7 +82,28 @@ class RemoteChordPeer implements IPeer
         return this.resolve(this.request.post(this.address + this.endpoint + "/notify/" + potentialPredecessor).timeout(Constants.Timeout));
     }
 
-    private resolvePeer(p: Promise<IResponse>)
+    public getResponsibility(identifier: string): Promise<Responsibility>
+    {
+        return this.resolveResponsibility(this.request.get(this.address + this.endpoint + "/responsibilities/" + identifier).timeout(Constants.Timeout));
+    }
+
+    public getResponsibilities(): Promise<Array<Responsibility>>
+    {
+        return this.resolveResponsibility(this.request.get(this.address + this.endpoint + "/responsibilities").timeout(Constants.Timeout))
+            .then((r: any) => r.map((t: any) => new Responsibility(t.identifier, t.data.map((s: any) => Subscription.deserialise(s)))));
+    }
+
+    public putResponsibility(responsibility: Responsibility): Promise<void>
+    {
+        return this.resolve(this.request.put(this.address + this.endpoint + "/responsibilities", JSON.stringify(responsibility)).timeout(Constants.Timeout));
+    }
+
+    public deleteResponsibility(identifier: string): Promise<void>
+    {
+        return this.resolve(this.request.delete(this.address + this.endpoint + "/responsibilities/" + identifier).timeout(Constants.Timeout));
+    }
+
+    private resolvePeer(p: Promise<IResponse>): Promise<string>
     {
         var deferred = Q.defer<string>();
 
@@ -101,7 +124,28 @@ class RemoteChordPeer implements IPeer
         return deferred.promise;
     }
 
-    private resolve(p: Promise<IResponse>)
+    private resolveResponsibility(p: Promise<IResponse>): Promise<Responsibility>
+    {
+        var deferred = Q.defer<Responsibility>();
+
+        p.then(r =>
+        {
+            switch (r.statusCode)
+            {
+                case StatusCode.Ok:
+                    deferred.resolve(Responsibility.deserialise(r.response.responsibility));
+                    break;
+
+                default:
+                    deferred.reject((void 0));
+                    break;
+            }
+        }).catch(() => deferred.reject((void 0)));
+
+        return deferred.promise;
+    }
+
+    private resolve(p: Promise<IResponse>): Promise<void>
     {
         var deferred = Q.defer<void>();
 

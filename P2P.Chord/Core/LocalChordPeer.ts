@@ -10,6 +10,7 @@ import Promise = Q.Promise;
 import IBroker = require("../../P2P/Brokers/IBroker");
 import IPeer = require("../Interfaces/IPeer");
 
+import ArrayUtilities = require("../../P2P/Utilities/ArrayUtilities");
 import Helpers = require("../../P2P/Utilities/Helpers");
 import RemoteChordPeer = require("./RemoteChordPeer");
 import StatusCode = require("../../P2P/Http/StatusCode");
@@ -200,9 +201,33 @@ class LocalChordPeer implements IPeer
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
 
-        //        app.get(this.endpoint + "/responsibilities/:identifier", (req, res) => { });
-        //        app.put(this.endpoint + "/responsibilities", (req, res) => { });
-        //        app.delete(this.endpoint + "/responsibilities/:identifier", (req, res) => { });
+        app.get(this.endpoint + "/responsibilities/:identifier", (req, res) =>
+        {
+            this.getResponsibility(req.params.identifier).then(p =>
+                {
+                    if (p !== null) res.status(StatusCode.Ok).json(p);
+                    else res.sendStatus(StatusCode.NotFound);
+                }
+            ).catch(() => res.sendStatus(StatusCode.InternalServerError));
+        });
+        app.get(this.endpoint + "/responsibilities", (req, res) =>
+        {
+            this.getResponsibilities()
+                .then(p => res.status(StatusCode.Ok).json(p))
+                .catch(() => res.sendStatus(StatusCode.InternalServerError));
+        });
+        app.put(this.endpoint + "/responsibilities", jsonParser, (req, res) =>
+        {
+            this.putResponsibility(req.body)
+                .then(() => res.sendStatus(StatusCode.NoContent))
+                .catch(() => res.sendStatus(StatusCode.InternalServerError));
+        });
+        app.delete(this.endpoint + "/responsibilities/:identifier", (req, res) =>
+        {
+            this.deleteResponsibility(req.params.identifier)
+                .then(() => res.sendStatus(StatusCode.NoContent))
+                .catch(() => res.sendStatus(StatusCode.InternalServerError));
+        });
 
         //        app.get(this.endpoint + "/retrieve/:tag", (req, res) => { });
         //        app.get(this.endpoint + "/retrieve/:tag/:timestamp", (req, res) => { });
@@ -452,6 +477,29 @@ class LocalChordPeer implements IPeer
             });
         }
 
+        return Helpers.resolvedUnit();
+    }
+
+    public getResponsibility(identifier: string): Promise<Responsibility>
+    {
+        var responsibility = ArrayUtilities.find(this.responsibilities, r => r.identifier === identifier);
+        return Helpers.resolvedPromise(responsibility);
+    }
+
+    public getResponsibilities(): Promise<Responsibility[]>
+    {
+        return Helpers.resolvedPromise(this.responsibilities);
+    }
+
+    public putResponsibility(responsibility: Responsibility): Promise<void>
+    {
+        this.responsibilities = this.responsibilities.filter(r => r.identifier !== responsibility.identifier).concat([ responsibility ]);
+        return Helpers.resolvedUnit();
+    }
+
+    public deleteResponsibility(identifier: string): Promise<void>
+    {
+        this.responsibilities = this.responsibilities.filter(r => r.identifier !== identifier);
         return Helpers.resolvedUnit();
     }
 
