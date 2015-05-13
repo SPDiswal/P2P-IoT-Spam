@@ -16,8 +16,6 @@ import Subscription = require("../../Common/Subscription");
 
 class SubscriberListRouter implements IRouter
 {
-    // TODO Replicate subscriber list.
-
     private recentMessages: any = { };
     private localSubscriptions: Array<Subscription> = [ ];
 
@@ -27,8 +25,20 @@ class SubscriberListRouter implements IRouter
         {
             var deferred = Q.defer<any>();
 
+            console.log(message);
+
             switch (message)
             {
+                case RouterMessages.MergeResponsibilities:
+                    var first = <Responsibility>data.first;
+                    var second = <Responsibility>data.second;
+
+                    var firstSubscribers = <Array<Subscription>>first.data.map((s: any) => Subscription.deserialise(s));
+                    var secondSubscribers = <Array<Subscription>>second.data.map((s: any) => Subscription.deserialise(s));
+
+                    deferred.resolve(new Responsibility(second.identifier, ArrayUtilities.union(firstSubscribers, secondSubscribers)));
+                    return deferred.promise;
+
                 case SubscriberListMessages.GetSubscriberList:
                     deferred.resolve(this.getFilteredSubscriberList(Message.deserialise(data)));
                     return deferred.promise;
@@ -46,7 +56,7 @@ class SubscriberListRouter implements IRouter
                     break;
 
                 case SubscriberListMessages.RemoveSubscription:
-                    this.removeFromSubscriberList(<string>data);
+                    this.removeFromSubscriberList(Subscription.deserialise(data));
                     break;
 
                 case SubscriberListMessages.PublishAgainExclusively:
@@ -71,7 +81,23 @@ class SubscriberListRouter implements IRouter
         {
             // Sends the message to each subscriber.
             var subscribers = ArrayUtilities.distinct(ArrayUtilities.flatten(s));
-            subscribers.forEach(t => this.sendMessage(t.address, message));
+
+            Q.allSettled(subscribers.map(subscriber =>
+            {
+                return this.sendMessage(subscriber.address, message).then(() => subscriber);
+            })).then(results =>
+            {
+                var succeedingSubscribers = results.filter(r => r.state === "fulfilled").map(r => <Subscription>r.value);
+                var failedSubscribers = ArrayUtilities.except(subscribers, succeedingSubscribers);
+
+                message.tags.map(tag =>
+                {
+                    this.lookup(tag).then(responsiblePeer => failedSubscribers.forEach(deadSubscription =>
+                    {
+                        this.removeSubscription(responsiblePeer, deadSubscription);
+                    }));
+                });
+            });
         });
     }
 
@@ -99,6 +125,8 @@ class SubscriberListRouter implements IRouter
     {
         var subscription = ArrayUtilities.find(this.localSubscriptions, s => s.id === id);
 
+        console.log("UNSUBSCRIBE " + JSON.stringify(subscription));
+
         if (subscription)
         {
             Q.all(subscription.tags.map(tag =>
@@ -106,7 +134,7 @@ class SubscriberListRouter implements IRouter
                 // Looks up the responsible peers of each subscription tag
                 // and removes this subscription from the subscriber lists of the responsible peers.
                 return this.lookup(tag)
-                    .then(responsiblePeer => this.removeSubscription(responsiblePeer, id));
+                    .then(responsiblePeer => this.removeSubscription(responsiblePeer, subscription));
                 //
             })).then(() => this.localSubscriptions = this.localSubscriptions.filter(s => s.id !== subscription.id));
         }
@@ -156,20 +184,15 @@ class SubscriberListRouter implements IRouter
 
     private addToSubscriberList(subscription: Subscription)
     {
-        subscription.tags.forEach(tag =>
-        {
-            this.getResponsibility(this.address, tag)
-                .then(r => this.putResponsibility(this.address, new Responsibility(r.identifier, r.data.concat([ subscription ]))))
-                .catch(() => this.putResponsibility(this.address, new Responsibility(tag, [ subscription ])));
-        });
+        subscription.tags.forEach(tag => this.putResponsibility(this.address, new Responsibility(tag, [ subscription ])));
     }
 
-    private removeFromSubscriberList(id: string)
+    private removeFromSubscriberList(subscription: Subscription)
     {
         this.getAllResponsibilities(this.address)
             .then(responsibilities => responsibilities.forEach(r =>
             {
-                this.putResponsibility(this.address, new Responsibility(r.identifier, r.data.filter((s: any) => s.id !== id)));
+                this.postResponsibility(this.address, new Responsibility(r.identifier, r.data.filter((s: any) => s.id !== subscription.id)));
             }));
     }
 
@@ -196,9 +219,9 @@ class SubscriberListRouter implements IRouter
         return this.broker.send(responsiblePeer, HttpMethod.Put, SubscriberListMessages.AddSubscription, subscription);
     }
 
-    private removeSubscription(responsiblePeer: Address, id: string)
+    private removeSubscription(responsiblePeer: Address, subscription: Subscription)
     {
-        return this.broker.send(responsiblePeer, HttpMethod.Delete, SubscriberListMessages.RemoveSubscription, id);
+        return this.broker.send(responsiblePeer, HttpMethod.Delete, SubscriberListMessages.RemoveSubscription, subscription);
     }
 
     private publishAgainExclusively(responsiblePeer: Address, subscription: Subscription)
@@ -216,6 +239,11 @@ class SubscriberListRouter implements IRouter
     {
         return this.broker.send(responsiblePeer, HttpMethod.Get, RouterMessages.GetAllResponsibilities, null)
             .then((r: any) => r.map((t: any) => new Responsibility(t.identifier, t.data.map((s: any) => Subscription.deserialise(s)))));
+    }
+
+    private postResponsibility(responsiblePeer: Address, responsibility: Responsibility): Promise<void>
+    {
+        return this.broker.send(responsiblePeer, HttpMethod.Put, RouterMessages.PostResponsibility, responsibility);
     }
 
     private putResponsibility(responsiblePeer: Address, responsibility: Responsibility): Promise<void>

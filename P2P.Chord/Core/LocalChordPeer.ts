@@ -11,11 +11,12 @@ import IBroker = require("../../P2P/Brokers/IBroker");
 import IPeer = require("../Interfaces/IPeer");
 
 import ArrayUtilities = require("../../P2P/Utilities/ArrayUtilities");
+import Constants = require("./Constants");
 import Helpers = require("../../P2P/Utilities/Helpers");
 import RemoteChordPeer = require("./RemoteChordPeer");
-import StatusCode = require("../../P2P/Http/StatusCode");
-import Constants = require("./Constants");
 import Responsibility = require("../../P2P/Common/Responsibility");
+import RouterMessages = require("../../P2P/Routers/RouterMessages");
+import StatusCode = require("../../P2P/Http/StatusCode");
 
 class LocalChordPeer implements IPeer
 {
@@ -37,6 +38,7 @@ class LocalChordPeer implements IPeer
     private checkPredecessorInterval: any;
     private fixFingersInterval: any;
     private fixSuccessorsInterval: any;
+    private checkResponsibilitiesInterval: any;
 
     private responsibilities: Array<Responsibility> = [ ];
 
@@ -205,7 +207,11 @@ class LocalChordPeer implements IPeer
         {
             this.getResponsibility(req.params.identifier).then(p =>
                 {
-                    if (p !== null) res.status(StatusCode.Ok).json(p);
+                    if (p !== null)
+                    {
+                        console.log(p);
+                        res.status(StatusCode.Ok).json(p);
+                    }
                     else res.sendStatus(StatusCode.NotFound);
                 }
             ).catch(() => res.sendStatus(StatusCode.InternalServerError));
@@ -214,6 +220,11 @@ class LocalChordPeer implements IPeer
         {
             this.getResponsibilities()
                 .then(p => res.status(StatusCode.Ok).json(p))
+                .catch(() => res.sendStatus(StatusCode.InternalServerError));
+        });
+        app.post(this.endpoint + "/responsibilities", jsonParser,(req, res) => {
+            this.postResponsibility(req.body)
+                .then(() => res.sendStatus(StatusCode.NoContent))
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
         app.put(this.endpoint + "/responsibilities", jsonParser, (req, res) =>
@@ -483,17 +494,43 @@ class LocalChordPeer implements IPeer
     public getResponsibility(identifier: string): Promise<Responsibility>
     {
         var responsibility = ArrayUtilities.find(this.responsibilities, r => r.identifier === identifier);
+
+        //        console.log("GETRESPON " + identifier);
+        //        console.log("GETRESPON " + JSON.stringify(this.responsibilities));
+        //        console.log("GETRESPON " + JSON.stringify(responsibility));
+
         return Helpers.resolvedPromise(responsibility);
     }
 
-    public getResponsibilities(): Promise<Responsibility[]>
+    public getResponsibilities(): Promise<Array<Responsibility>>
     {
         return Helpers.resolvedPromise(this.responsibilities);
     }
 
-    public putResponsibility(responsibility: Responsibility): Promise<void>
+    public postResponsibility(incomingResponsibility: Responsibility): Promise<void>
     {
-        this.responsibilities = this.responsibilities.filter(r => r.identifier !== responsibility.identifier).concat([ responsibility ]);
+        this.responsibilities = this.responsibilities.filter(r => r.identifier !== incomingResponsibility.identifier).concat([ incomingResponsibility ]);
+        return Helpers.resolvedUnit();
+    }
+
+    public putResponsibility(incomingResponsibility: Responsibility): Promise<void>
+    {
+        var existingResponbility = ArrayUtilities.find(this.responsibilities, r => r.identifier === incomingResponsibility.identifier);
+
+        if (!existingResponbility)
+            this.responsibilities = this.responsibilities.concat([ incomingResponsibility ]);
+        else
+        {
+            this.broker.delegate(RouterMessages.MergeResponsibilities, {
+                first: existingResponbility,
+                second: incomingResponsibility
+            }).then((mergedResponsibility: Responsibility) =>
+            {
+                console.log("MERGED: " + JSON.stringify(mergedResponsibility));
+                this.responsibilities = this.responsibilities.filter(r => r.identifier !== mergedResponsibility.identifier).concat([mergedResponsibility])
+            });
+        };
+
         return Helpers.resolvedUnit();
     }
 
@@ -598,6 +635,44 @@ class LocalChordPeer implements IPeer
             return Helpers.resolvedPromise(this);
     }
 
+    private checkResponsibilities()
+    {
+        for (var i = this.responsibilities.length - 1; i >= 0; i--)
+        {
+            ((j: number) =>
+            {
+                this.lookup(Helpers.hash(this.responsibilities[j].identifier)).then(r =>
+                {
+                    if (r !== this.address)
+                    {
+                        var peer = new RemoteChordPeer(r, this.endpoint);
+
+                        peer.putResponsibility(this.responsibilities[j]);
+                        this.deleteResponsibility(this.responsibilities[j].identifier);
+
+                        //                        peer.getResponsibility(this.responsibilities[j].identifier).then(theirResponsibility =>
+                        //                        {
+                        //                            this.broker.delegate(RouterMessages.MergeResponsibilities, {
+                        //                                first: this.responsibilities[j],
+                        //                                second: theirResponsibility
+                        //                            }).then((mergedResponsibility: Responsibility) =>
+                        //                            {
+                        //                                console.log("MOVED RESPONSIBILITY " + this.responsibilities[j].identifier + " from " + this.address + " to " + r);
+                        //                                console.log(mergedResponsibility);
+                        //                                peer.putResponsibility(mergedResponsibility);
+                        //                                this.deleteResponsibility(this.responsibilities[j].identifier);
+                        //                            });
+                        //                        }).catch(() =>
+                        //                        {
+                        //                            peer.putResponsibility(this.responsibilities[j]);
+                        //                            this.deleteResponsibility(this.responsibilities[j].identifier);
+                        //                        });
+                    }
+                });
+            })(i);
+        }
+    }
+
     private resetToSinglePeer(knownPeer: string)
     {
         var i: number;
@@ -629,10 +704,13 @@ class LocalChordPeer implements IPeer
         this.log("Chord peer running at " + this.address + "\n");
         this.resetToSinglePeer(this.address);
 
+        var numberOfIntervals = 5;
+
         this.stabiliseInterval = setInterval(() => this.stabilise(), Constants.StabiliseInterval);
-        this.checkPredecessorInterval = setTimeout(() => setInterval(() => this.checkPredecessor(), Constants.StabiliseInterval), 1 * Constants.StabiliseInterval / 4);
-        this.fixFingersInterval = setTimeout(() => setInterval(() => this.fixFingers(), Constants.StabiliseInterval), 2 * Constants.StabiliseInterval / 4);
-        this.fixSuccessorsInterval = setTimeout(() => setInterval(() => this.fixSuccessors(), Constants.StabiliseInterval), 3 * Constants.StabiliseInterval / 4);
+        this.checkPredecessorInterval = setTimeout(() => setInterval(() => this.checkPredecessor(), Constants.StabiliseInterval), 1 * Constants.StabiliseInterval / numberOfIntervals);
+        this.fixFingersInterval = setTimeout(() => setInterval(() => this.fixFingers(), Constants.StabiliseInterval), 2 * Constants.StabiliseInterval / numberOfIntervals);
+        this.fixSuccessorsInterval = setTimeout(() => setInterval(() => this.fixSuccessors(), Constants.StabiliseInterval), 3 * Constants.StabiliseInterval / numberOfIntervals);
+        this.checkResponsibilitiesInterval = setTimeout(() => setInterval(() => this.checkResponsibilities(), Constants.StabiliseInterval), 4 * Constants.StabiliseInterval / numberOfIntervals);
 
         // TODO checkResponsibilitiesInterval (which ensures that responsibilities are stored at the right peer and moved otherwise)
         // TODO replicateInterval (which ensures that replicates of responsibilities are registered and refreshed at the right peers - also merges database of replicating peers with own database to ensure up-to-date contents)

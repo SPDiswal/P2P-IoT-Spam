@@ -34,7 +34,7 @@
 
     public static contains<T>(array: Array<T>, element: T): boolean
     {
-        return array.indexOf(element) >= 0;
+        return this.indexOfWithEquals(array, element) >= 0;
     }
 
     public static flatten<T>(array: Array<Array<T>>): Array<T>
@@ -42,9 +42,19 @@
         return (<Array<T>>[ ]).concat.apply(<Array<T>>[ ], array);
     }
 
+    public static union<T>(first: Array<T>, second: Array<T>): Array<T>
+    {
+        return this.distinct(first.concat(second));
+    }
+
     public static intersection<T>(first: Array<T>, second: Array<T>): Array<T>
     {
         return first.filter(value => (second.indexOf(value) !== -1));
+    }
+
+    public static except<T>(first: Array<T>, second: Array<T>): Array<T>
+    {
+        return first.filter(value => (second.indexOf(value) === -1));
     }
 
     public static disjoint<T>(first: Array<T>, second: Array<T>): boolean

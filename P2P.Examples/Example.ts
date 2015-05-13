@@ -47,7 +47,7 @@ class Example
 
         app.post("/publish", jsonParser, (req, res) =>
         {
-//            framework.publish(req.body.tags, req.body.contents);
+            //            framework.publish(req.body.tags, req.body.contents);
             framework.publish([ "weather" ], { description: "sunny", temperature: 10, precipitation: 0, wind: "mind-blowing" });
             res.sendStatus(StatusCode.NoContent);
         });
@@ -59,6 +59,11 @@ class Example
             console.log("New subscription: " + framework.subscribe([ "weather" ], (tags: Array<string>, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents))));
         });
 
+        app.post("/unsubscribe/:id", (req, res) => {
+            res.sendStatus(StatusCode.NoContent);
+            framework.unsubscribe(req.params.id);
+        });
+
         // Adds web interface resources.
         app.get("/", (req, res) => this.getHtml("index", req, res));
         app.get("/Scripts/interface.js", (req, res) => this.getScript("interface", req, res));
@@ -68,8 +73,7 @@ class Example
         app.listen(port, host, () =>
         {
             framework.run();
-            //            console.log("New subscription: " + framework.subscribe([ "weather" ], (tags: Array<string>, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents))));
-            //            setTimeout(() => framework.publish([ "weather" ], { description: "sunny", temperature: 10, precipitation: 0, wind: "mind-blowing" }), 100);
+//            console.log("New subscription: " + framework.subscribe(["weather"],(tags: Array<string>, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents))));
         });
     }
 }

@@ -40,7 +40,7 @@
 
         if (value !== "")
         {
-            $.get("http://{{ selfAddr }}/spamble/resource/" + value, function (data)
+            $.get("http://{{ selfAddr }}/resource/" + value, function (data)
             {
                 if (data.length > 0)
                 {
@@ -104,7 +104,7 @@
 
     function updatePredecessor()
     {
-        $.get("http://{{ selfAddr }}/spamble/predecessor", function (data)
+        $.get("http://{{ selfAddr }}/predecessor", function (data)
         {
             if (data.peer != null)
             {
@@ -123,7 +123,7 @@
 
     function updateSuccessor()
     {
-        $.get("http://{{ selfAddr }}/spamble/successor", function (data)
+        $.get("http://{{ selfAddr }}/successor", function (data)
         {
             $("#successorAddress").html("<a href=\"http://" + data.peer + "\">" + data.peer + "</a>");
             $("#successorHash").text(hash(data.peer));
@@ -133,7 +133,7 @@
 
     function updateFingers()
     {
-        $.get("http://{{ selfAddr }}/spamble/fingers", function (data)
+        $.get("http://{{ selfAddr }}/fingers", function (data)
         {
             $("#fingerFixed").html("Most recently fixed finger: " + data.mostRecentlyFixedFinger);
             $("#successorFixed").html("Most recently fixed successor: " + data.mostRecentlyFixedSuccessor);
@@ -154,7 +154,7 @@
 
     function updateResources()
     {
-        $.get("http://{{ selfAddr }}/spamble/resources", function (data)
+        $.get("http://{{ selfAddr }}/resources", function (data)
         {
             var resources = data.resources;
 
@@ -180,7 +180,7 @@
             }
         });
 
-        $.get("http://{{ selfAddr }}/spamble/replications", function (data)
+        $.get("http://{{ selfAddr }}/replications", function (data)
         {
             var replications = data.replications;
 
@@ -231,13 +231,13 @@
     {
         $("#joinPort").hide();
         $("#joinButton").hide();
-        $.post("http://{{ selfAddr }}/spamble/join/127.0.0.1:" + $("#joinPort").val());
+        $.post("http://{{ selfAddr }}/join/127.0.0.1:" + $("#joinPort").val());
         setTimeout(updateAll, 3500);
     }
 
     function leave()
     {
-        $.post("http://{{ selfAddr }}/spamble/leave");
+        $.post("http://{{ selfAddr }}/leave");
         setTimeout(updateAll, 500);
     }
 
@@ -258,7 +258,7 @@
             });
 
             $.ajax({
-                url: "http://{{ selfAddr }}/spamble/resource",
+                url: "http://{{ selfAddr }}/resource",
                 type: "PUT",
                 data: data,
                 contentType: "application/json"
@@ -278,7 +278,7 @@
 
             if (value !== "")
             {
-                $.get("http://{{ selfAddr }}/spamble/lookup/" + hash(value), function (data)
+                $.get("http://{{ selfAddr }}/lookup/" + hash(value), function (data)
                 {
                     $("#lookupResultLeft").html(hash(value));
                     $("#lookupResultRight").html("<a href=\"http://" + data.peer + "\">" + data.peer + "</a> (hash: " + hash(data.peer) + ")");
@@ -297,7 +297,7 @@
 
             if (value !== "")
             {
-                $.get("http://{{ selfAddr }}/spamble/lookup/" + hash(value), function (data)
+                $.get("http://{{ selfAddr }}/lookup/" + hash(value), function (data)
                 {
                     $("#addResourceId").html(hash(value) + " in " + data.peer);
                 });
