@@ -39,8 +39,10 @@ class LocalChordPeer implements IPeer
     private fixFingersInterval: any;
     private fixSuccessorsInterval: any;
     private checkResponsibilitiesInterval: any;
+    private checkReplicationsInterval: any;
 
     private responsibilities: Array<Responsibility> = [ ];
+    private replications: Array<Responsibility> = [ ];
 
     constructor(app: Application, private broker: IBroker, private _address: string, private endpoint: string, private isLogging = false)
     {
@@ -222,7 +224,8 @@ class LocalChordPeer implements IPeer
                 .then(p => res.status(StatusCode.Ok).json(p))
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
-        app.post(this.endpoint + "/responsibilities", jsonParser,(req, res) => {
+        app.post(this.endpoint + "/responsibilities", jsonParser, (req, res) =>
+        {
             this.postResponsibility(req.body)
                 .then(() => res.sendStatus(StatusCode.NoContent))
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
@@ -240,11 +243,48 @@ class LocalChordPeer implements IPeer
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
 
+        app.get(this.endpoint + "/replications/:identifier", (req, res) =>
+        {
+            this.getReplication(req.params.identifier).then(p =>
+                {
+                    if (p !== null)
+                    {
+                        console.log(p);
+                        res.status(StatusCode.Ok).json(p);
+                    }
+                    else res.sendStatus(StatusCode.NotFound);
+                }
+            ).catch(() => res.sendStatus(StatusCode.InternalServerError));
+        });
+        app.get(this.endpoint + "/replications", (req, res) =>
+        {
+            this.getReplications()
+                .then(p => res.status(StatusCode.Ok).json(p))
+                .catch(() => res.sendStatus(StatusCode.InternalServerError));
+        });
+        app.post(this.endpoint + "/replications", jsonParser, (req, res) =>
+        {
+            this.postReplication(req.body)
+                .then(() => res.sendStatus(StatusCode.NoContent))
+                .catch(() => res.sendStatus(StatusCode.InternalServerError));
+        });
+        app.put(this.endpoint + "/replications", jsonParser, (req, res) =>
+        {
+            this.putReplication(req.body)
+                .then(() => res.sendStatus(StatusCode.NoContent))
+                .catch(() => res.sendStatus(StatusCode.InternalServerError));
+        });
+        app.delete(this.endpoint + "/replications/:identifier", (req, res) =>
+        {
+            this.deleteReplication(req.params.identifier)
+                .then(() => res.sendStatus(StatusCode.NoContent))
+                .catch(() => res.sendStatus(StatusCode.InternalServerError));
+        });
+
         //        app.get(this.endpoint + "/retrieve/:tag", (req, res) => { });
         //        app.get(this.endpoint + "/retrieve/:tag/:timestamp", (req, res) => { });
         //        app.put(this.endpoint + "/persist", (req, res) => { });
         //        app.delete(this.endpoint + "/sweep", (req, res) => { });
-        //        app.post(this.endpoint + "/replicate", (req, res) => { });
     }
 
     public get address(): string
@@ -317,15 +357,6 @@ class LocalChordPeer implements IPeer
     {
         if (this.successors[index] && newSuccessor === this.successors[index].address)
             return Helpers.resolvedUnit();
-
-        // TODO Replication
-        //        if (successor.id !== this.successorList[successorToBeFixed].id)
-        //        {
-        //            this.successorList[successorToBeFixed] = successor;
-        //
-        //            for (var i = 0; i < this.resources.length; i++)
-        //                successor.registerReplication(this.resources[i]);
-        //        }
 
         if (newSuccessor === this.address)
         {
@@ -494,11 +525,6 @@ class LocalChordPeer implements IPeer
     public getResponsibility(identifier: string): Promise<Responsibility>
     {
         var responsibility = ArrayUtilities.find(this.responsibilities, r => r.identifier === identifier);
-
-        //        console.log("GETRESPON " + identifier);
-        //        console.log("GETRESPON " + JSON.stringify(this.responsibilities));
-        //        console.log("GETRESPON " + JSON.stringify(responsibility));
-
         return Helpers.resolvedPromise(responsibility);
     }
 
@@ -526,8 +552,7 @@ class LocalChordPeer implements IPeer
                 second: incomingResponsibility
             }).then((mergedResponsibility: Responsibility) =>
             {
-                console.log("MERGED: " + JSON.stringify(mergedResponsibility));
-                this.responsibilities = this.responsibilities.filter(r => r.identifier !== mergedResponsibility.identifier).concat([mergedResponsibility])
+                this.responsibilities = this.responsibilities.filter(r => r.identifier !== mergedResponsibility.identifier).concat([ mergedResponsibility ]);
             });
         };
 
@@ -537,6 +562,49 @@ class LocalChordPeer implements IPeer
     public deleteResponsibility(identifier: string): Promise<void>
     {
         this.responsibilities = this.responsibilities.filter(r => r.identifier !== identifier);
+        return Helpers.resolvedUnit();
+    }
+
+    public getReplication(identifier: string): Promise<Responsibility>
+    {
+        var replication = ArrayUtilities.find(this.replications, r => r.identifier === identifier);
+        return Helpers.resolvedPromise(replication);
+    }
+
+    public getReplications(): Promise<Array<Responsibility>>
+    {
+        return Helpers.resolvedPromise(this.replications);
+    }
+
+    public postReplication(incomingReplication: Responsibility): Promise<void>
+    {
+        this.replications = this.replications.filter(r => r.identifier !== incomingReplication.identifier).concat([ incomingReplication ]);
+        return Helpers.resolvedUnit();
+    }
+
+    public putReplication(incomingReplication: Responsibility): Promise<void>
+    {
+        var existingReplication = ArrayUtilities.find(this.replications, r => r.identifier === incomingReplication.identifier);
+
+        if (!existingReplication)
+            this.replications = this.replications.concat([ incomingReplication ]);
+        else
+        {
+            this.broker.delegate(RouterMessages.MergeResponsibilities, {
+                first: existingReplication,
+                second: incomingReplication
+            }).then((mergedResponsibility: Responsibility) =>
+            {
+                this.replications = this.replications.filter(r => r.identifier !== mergedResponsibility.identifier).concat([ mergedResponsibility ]);
+            });
+        };
+
+        return Helpers.resolvedUnit();
+    }
+
+    public deleteReplication(identifier: string): Promise<void>
+    {
+        this.replications = this.replications.filter(r => r.identifier !== identifier);
         return Helpers.resolvedUnit();
     }
 
@@ -649,24 +717,31 @@ class LocalChordPeer implements IPeer
 
                         peer.putResponsibility(this.responsibilities[j]);
                         this.deleteResponsibility(this.responsibilities[j].identifier);
+                    }
+                    else
+                    {
+                        for (var k = 0; k < this.successors.length; k++)
+                            this.successors[k].postReplication(this.responsibilities[j]);
+                    }
+                });
+            })(i);
+        }
+    }
 
-                        //                        peer.getResponsibility(this.responsibilities[j].identifier).then(theirResponsibility =>
-                        //                        {
-                        //                            this.broker.delegate(RouterMessages.MergeResponsibilities, {
-                        //                                first: this.responsibilities[j],
-                        //                                second: theirResponsibility
-                        //                            }).then((mergedResponsibility: Responsibility) =>
-                        //                            {
-                        //                                console.log("MOVED RESPONSIBILITY " + this.responsibilities[j].identifier + " from " + this.address + " to " + r);
-                        //                                console.log(mergedResponsibility);
-                        //                                peer.putResponsibility(mergedResponsibility);
-                        //                                this.deleteResponsibility(this.responsibilities[j].identifier);
-                        //                            });
-                        //                        }).catch(() =>
-                        //                        {
-                        //                            peer.putResponsibility(this.responsibilities[j]);
-                        //                            this.deleteResponsibility(this.responsibilities[j].identifier);
-                        //                        });
+    private checkReplications()
+    {
+        this.replications = ArrayUtilities.except(this.replications, this.responsibilities);
+
+        for (var i = this.replications.length - 1; i >= 0; i--)
+        {
+            ((j: number) =>
+            {
+                this.lookup(Helpers.hash(this.replications[j].identifier)).then(r =>
+                {
+                    if (r === this.address)
+                    {
+                        this.postResponsibility(this.replications[j]);
+                        this.deleteReplication(this.replications[j].identifier);
                     }
                 });
             })(i);
@@ -697,6 +772,8 @@ class LocalChordPeer implements IPeer
         clearInterval(this.fixFingersInterval);
         clearInterval(this.fixSuccessorsInterval);
         clearInterval(this.checkPredecessorInterval);
+        clearInterval(this.checkResponsibilitiesInterval);
+        clearInterval(this.checkReplicationsInterval);
     }
 
     public run()
@@ -704,13 +781,14 @@ class LocalChordPeer implements IPeer
         this.log("Chord peer running at " + this.address + "\n");
         this.resetToSinglePeer(this.address);
 
-        var numberOfIntervals = 5;
+        var numberOfIntervals = 6;
 
         this.stabiliseInterval = setInterval(() => this.stabilise(), Constants.StabiliseInterval);
         this.checkPredecessorInterval = setTimeout(() => setInterval(() => this.checkPredecessor(), Constants.StabiliseInterval), 1 * Constants.StabiliseInterval / numberOfIntervals);
         this.fixFingersInterval = setTimeout(() => setInterval(() => this.fixFingers(), Constants.StabiliseInterval), 2 * Constants.StabiliseInterval / numberOfIntervals);
         this.fixSuccessorsInterval = setTimeout(() => setInterval(() => this.fixSuccessors(), Constants.StabiliseInterval), 3 * Constants.StabiliseInterval / numberOfIntervals);
         this.checkResponsibilitiesInterval = setTimeout(() => setInterval(() => this.checkResponsibilities(), Constants.StabiliseInterval), 4 * Constants.StabiliseInterval / numberOfIntervals);
+        this.checkReplicationsInterval = setTimeout(() => setInterval(() => this.checkReplications(), Constants.StabiliseInterval), 5 * Constants.StabiliseInterval / numberOfIntervals);
 
         // TODO checkResponsibilitiesInterval (which ensures that responsibilities are stored at the right peer and moved otherwise)
         // TODO replicateInterval (which ensures that replicates of responsibilities are registered and refreshed at the right peers - also merges database of replicating peers with own database to ensure up-to-date contents)

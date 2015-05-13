@@ -30,9 +30,21 @@ interface IPeer
 
     getResponsibilities(): Promise<Array<Responsibility>>;
 
+    postResponsibility(responsibility: Responsibility): Promise<void>;
+
     putResponsibility(responsibility: Responsibility): Promise<void>;
 
     deleteResponsibility(identifier: string): Promise<void>;
+
+    getReplication(identifier: string): Promise<Responsibility>;
+
+    getReplications(): Promise<Array<Responsibility>>;
+
+    postReplication(responsibility: Responsibility): Promise<void>;
+
+    putReplication(responsibility: Responsibility): Promise<void>;
+
+    deleteReplication(identifier: string): Promise<void>;
 }
 
 export = IPeer

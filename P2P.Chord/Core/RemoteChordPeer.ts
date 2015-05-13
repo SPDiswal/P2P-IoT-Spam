@@ -90,7 +90,12 @@ class RemoteChordPeer implements IPeer
     public getResponsibilities(): Promise<Array<Responsibility>>
     {
         return this.resolveResponsibility(this.request.get(this.address + this.endpoint + "/responsibilities").timeout(Constants.Timeout))
-            .then((r: any) => r.map((t: any) => new Responsibility(t.identifier, t.data.map((s: any) => Subscription.deserialise(s)))));
+            .then((r: any) => r.map((t: any) => new Responsibility(t.identifier, t.data)));
+    }
+
+    public postResponsibility(responsibility: Responsibility): Promise<void>
+    {
+        return this.resolve(this.request.post(this.address + this.endpoint + "/responsibilities", JSON.stringify(responsibility)).timeout(Constants.Timeout));
     }
 
     public putResponsibility(responsibility: Responsibility): Promise<void>
@@ -101,6 +106,32 @@ class RemoteChordPeer implements IPeer
     public deleteResponsibility(identifier: string): Promise<void>
     {
         return this.resolve(this.request.delete(this.address + this.endpoint + "/responsibilities/" + identifier).timeout(Constants.Timeout));
+    }
+
+    public getReplication(identifier: string): Promise<Responsibility>
+    {
+        return this.resolveResponsibility(this.request.get(this.address + this.endpoint + "/replications/" + identifier).timeout(Constants.Timeout));
+    }
+
+    public getReplications(): Promise<Array<Responsibility>>
+    {
+        return this.resolveResponsibility(this.request.get(this.address + this.endpoint + "/replications").timeout(Constants.Timeout))
+            .then((r: any) => r.map((t: any) => new Responsibility(t.identifier, t.data)));
+    }
+
+    public postReplication(responsibility: Responsibility): Promise<void>
+    {
+        return this.resolve(this.request.post(this.address + this.endpoint + "/replications", JSON.stringify(responsibility)).timeout(Constants.Timeout));
+    }
+
+    public putReplication(responsibility: Responsibility): Promise<void>
+    {
+        return this.resolve(this.request.put(this.address + this.endpoint + "/replications", JSON.stringify(responsibility)).timeout(Constants.Timeout));
+    }
+
+    public deleteReplication(identifier: string): Promise<void>
+    {
+        return this.resolve(this.request.delete(this.address + this.endpoint + "/replications/" + identifier).timeout(Constants.Timeout));
     }
 
     private resolvePeer(p: Promise<IResponse>): Promise<string>
