@@ -31,6 +31,18 @@ class RestChordBroker implements IBroker
             case RouterMessages.Lookup:
                 return this.resolveToAddressOnOk(this.request.get(destination.toString() + "/lookup/" + Helpers.hash(<string>data)));
 
+            case RouterMessages.GetResponsibility:
+                return this.resolveOnSuccess(this.request.get(destination.toString() + "/responsibilities/" + data));
+
+            case RouterMessages.GetAllResponsibilities:
+                return this.resolveOnSuccess(this.request.get(destination.toString() + "/responsibilities"));
+
+            case RouterMessages.PutResponsibility:
+                return this.resolveOnNoContent(this.request.put(destination.toString() + "/responsibilities", JSON.stringify(data)));
+
+            case RouterMessages.DeleteResponsibility:
+                return this.resolveOnNoContent(this.request.delete(destination.toString() + "/responsibilities/" + data));
+
             //    case "RetrieveAllMessages":
             //        this.request.get(address + "/messages/" + <string>data);
             //        break;

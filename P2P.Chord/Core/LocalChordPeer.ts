@@ -14,7 +14,7 @@ import Helpers = require("../../P2P/Utilities/Helpers");
 import RemoteChordPeer = require("./RemoteChordPeer");
 import StatusCode = require("../../P2P/Http/StatusCode");
 import Constants = require("./Constants");
-import Responsibility = require("./Responsibility");
+import Responsibility = require("../../P2P/Common/Responsibility");
 
 class LocalChordPeer implements IPeer
 {
@@ -200,9 +200,9 @@ class LocalChordPeer implements IPeer
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
 
-        //        app.get(this.endpoint + "/responsibilities/:tag", (req, res) => { });
-        //        app.put(this.endpoint + "/responsibilities/:tag", (req, res) => { });
-        //        app.delete(this.endpoint + "/responsibilities/:tag", (req, res) => { });
+        //        app.get(this.endpoint + "/responsibilities/:identifier", (req, res) => { });
+        //        app.put(this.endpoint + "/responsibilities", (req, res) => { });
+        //        app.delete(this.endpoint + "/responsibilities/:identifier", (req, res) => { });
 
         //        app.get(this.endpoint + "/retrieve/:tag", (req, res) => { });
         //        app.get(this.endpoint + "/retrieve/:tag/:timestamp", (req, res) => { });

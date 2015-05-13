@@ -33,7 +33,6 @@
     <TypeScriptCompile Include="Core\LocalChordPeer.ts" />
     <TypeScriptCompile Include="Core\Constants.ts" />
     <TypeScriptCompile Include="Core\RemoteChordPeer.ts" />
-    <TypeScriptCompile Include="Core\Responsibility.ts" />
     <TypeScriptCompile Include="Interfaces\IPeer.ts" />
     <TypeScriptCompile Include="Interfaces\IDataRow.ts" />
     <TypeScriptCompile Include="Core\Peer.ts" />

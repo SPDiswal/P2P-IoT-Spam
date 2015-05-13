@@ -9,6 +9,7 @@ import Address = require("../../Common/Address");
 import ArrayUtilities = require("../../Utilities/ArrayUtilities");
 import HttpMethod = require("../../Http/HttpMethod");
 import Message = require("../../Common/Message");
+import Responsibility = require("../../Common/Responsibility");
 import RouterMessages = require("../RouterMessages");
 import SubscriberListMessages = require("./SubscriberListMessages");
 import Subscription = require("../../Common/Subscription");
@@ -18,7 +19,6 @@ class SubscriberListRouter implements IRouter
     // TODO Replicate subscriber list.
 
     private recentMessages: any = { };
-    private subscriberList: Array<Subscription> = [ ];
     private localSubscriptions: Array<Subscription> = [ ];
 
     constructor(private address: Address, private broker: IBroker, private filterEvaluator: IFilterEvaluator)
@@ -71,7 +71,7 @@ class SubscriberListRouter implements IRouter
         {
             // Sends the message to each subscriber.
             var subscribers = ArrayUtilities.distinct(ArrayUtilities.flatten(s));
-            subscribers.map(t => Subscription.deserialise(t)).forEach(t => this.sendMessage(t.address, message));
+            subscribers.forEach(t => this.sendMessage(t.address, message));
         });
     }
 
@@ -120,9 +120,17 @@ class SubscriberListRouter implements IRouter
     }
 
     // HELPERS: Incoming messages
-    private getFilteredSubscriberList(message: Message): Array<Subscription>
+    private getFilteredSubscriberList(message: Message): Promise<Array<Subscription>>
     {
-        return this.subscriberList.filter(s => this.filter(s, message));
+        var deferred = Q.defer<Array<Subscription>>();
+
+        Q.all<Array<Subscription>>(message.tags.map(tag => this.getResponsibility(this.address, tag))).then(s =>
+        {
+            var subscribers = ArrayUtilities.distinct(ArrayUtilities.flatten(s));
+            deferred.resolve(subscribers.filter(s => this.filter(s, message)));
+        }).catch(() => deferred.reject((void 0)));
+
+        return deferred.promise;
     }
 
     private filter(subscription: Subscription, message: Message)
@@ -150,25 +158,33 @@ class SubscriberListRouter implements IRouter
 
     private addToSubscriberList(subscription: Subscription)
     {
-        this.subscriberList.push(subscription);
+        subscription.tags.forEach(tag =>
+        {
+            this.getResponsibility(this.address, tag)
+                .then(r => this.putResponsibility(this.address, new Responsibility(r.identifier, r.data.concat([ subscription ]))));
+        });
     }
 
     private removeFromSubscriberList(id: string)
     {
-        this.subscriberList = this.subscriberList.filter(s => s.id !== id);
+        this.getAllResponsibilities(this.address)
+            .then(responsibilities => responsibilities.forEach(r =>
+            {
+                this.putResponsibility(this.address, new Responsibility(r.identifier, r.data.filter((s: any) => s.id !== id)));
+            }));
     }
 
     // HELPERS: Broker
     private lookup(tag: string): Promise<Address>
     {
         return this.broker.send(this.address, HttpMethod.Get, RouterMessages.Lookup, tag)
-            .then((r: any) => Address.deserialise(r));
+            .then((a: any) => Address.deserialise(a));
     }
 
     private getSubscriberList(responsiblePeer: Address, message: Message): Promise<Array<Subscription>>
     {
         return this.broker.send(responsiblePeer, HttpMethod.Get, SubscriberListMessages.GetSubscriberList, message)
-            .then((r: any) => r.map((t: any) => Subscription.deserialise(t)));
+            .then((r: any) => r.map((s: any) => Subscription.deserialise(s)));
     }
 
     private sendMessage(subscriber: Address, message: Message)
@@ -189,6 +205,28 @@ class SubscriberListRouter implements IRouter
     private publishAgainExclusively(responsiblePeer: Address, subscription: Subscription)
     {
         return this.broker.send(responsiblePeer, HttpMethod.Post, SubscriberListMessages.PublishAgainExclusively, subscription);
+    }
+
+    private getResponsibility(responsiblePeer: Address, tag: string): Promise<Responsibility>
+    {
+        return this.broker.send(responsiblePeer, HttpMethod.Get, RouterMessages.GetResponsibility, tag)
+            .then((r: any) => new Responsibility(r.identifier, r.data.map((s: any) => Subscription.deserialise(s))));
+    }
+
+    private getAllResponsibilities(responsiblePeer: Address): Promise<Array<Responsibility>>
+    {
+        return this.broker.send(responsiblePeer, HttpMethod.Get, RouterMessages.GetAllResponsibilities, null)
+            .then((r: any) => r.map((t: any) => new Responsibility(t.identifier, t.data.map((s: any) => Subscription.deserialise(s)))));
+    }
+
+    private putResponsibility(responsiblePeer: Address, responsibility: Responsibility): Promise<void>
+    {
+        return this.broker.send(responsiblePeer, HttpMethod.Put, RouterMessages.PutResponsibility, responsibility);
+    }
+
+    private deleteResponsibility(responsiblePeer: Address, tag: string): Promise<void>
+    {
+        return this.broker.send(responsiblePeer, HttpMethod.Delete, RouterMessages.DeleteResponsibility, tag);
     }
 }
 
