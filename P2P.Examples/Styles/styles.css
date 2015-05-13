@@ -1,0 +1,130 @@
+﻿html
+{
+    overflow-y: scroll;
+}
+
+html,
+body
+{
+    background-attachment: fixed;
+    background-image: url("../Content/Images/Background.png");
+    background-repeat: no-repeat;
+    color: white;
+    font-family: "Source Sans Pro", sans-serif;
+    font-size: 14pt;
+    height: 100%;
+}
+
+main
+{
+    height: auto;
+    margin: 0 auto -220px;
+    min-height: 100%;
+    padding: 0 0 220px;
+}
+
+footer
+{
+    height: 220px;
+}
+
+.btn-transparent
+{
+    background: none;
+    border: none;
+    box-shadow: none;
+    color: white;
+}
+
+.btn-transparent:focus
+{
+    background: none;
+    color: white;
+}
+
+.btn-transparent:hover
+{
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.col-lg-1, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-6
+{
+    display: inline-block;
+    float: none;
+    margin-right: -4px;
+    vertical-align: middle;
+}
+
+.center
+{
+    text-align: center;
+}
+
+.chordAddress
+{
+    font-size: 18pt;
+    font-weight: 400;
+}
+
+.chordHash
+{
+    font-size: 14pt;
+    font-weight: 400;
+    margin: -5px 0 0;
+}
+
+#home
+{
+    text-align: center;
+}
+
+#selfAddress
+{
+    font-size: 28pt;
+    font-weight: 600;
+}
+
+#selfHash
+{
+    font-size: 14pt;
+    font-weight: 400;
+    margin: -5px 0 0;
+}
+
+#lookupResultLeft
+{
+    float: left;
+    margin-top: 10px;
+}
+
+#lookupResultRight
+{
+    float: right;
+    margin-right: 37px;
+    margin-top: 10px;
+}
+
+#addResourceUrl
+{
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+#milestone
+{
+    font-size: 32pt;
+    font-weight: 300;
+}
+
+#course
+{
+    font-size: 20pt;
+    font-weight: 600;
+    margin: -10px 0 20px 0;
+}
+
+#authors
+{
+    font-size: 16pt;
+}

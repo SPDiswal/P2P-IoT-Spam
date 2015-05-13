@@ -1,10 +1,12 @@
 ﻿class Constants
 {
-    public static SpaceSize = 32;
-    public static SuccessorListCount = 5;
-    public static MoveResourceTimeout = 3;
-    public static StabiliseInterval = 1;
-    public static SnapshotInterval = 60;
+    public static get SpaceSize(): number { return 32; }
+
+    public static get SuccessorsCount(): number { return 5; }
+
+    public static get StabiliseInterval(): number { return 1000 /* ms */; }
+
+    public static get Timeout(): number { return 100 /* ms */; }
 }
 
 export = Constants;

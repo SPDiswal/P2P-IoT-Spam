@@ -1,6 +1,9 @@
 ﻿interface IDataRow
 {
-    peer: string;
-    value: any;
+    id: string;
+    contents: string;
+    tags: Array<string>;
     timestamp: Date;
 }
+
+export = IDataRow;

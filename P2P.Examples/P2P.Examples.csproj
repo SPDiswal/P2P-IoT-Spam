@@ -18,9 +18,24 @@
     <IISExpressUseClassicPipelineMode />
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="Content\Fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="Content\Images\Background.png" />
+    <Content Include="Scripts\bootstrap.min.js" />
+    <Content Include="Scripts\d3.v3.min.js" />
+    <Content Include="Scripts\interface.js" />
+    <Content Include="Scripts\jquery.min.js" />
+    <Content Include="Scripts\sha1.js" />
+    <Content Include="Styles\bootstrap.css" />
+    <Content Include="Styles\styles.css" />
+    <Content Include="Styles\visuals.css" />
+    <Content Include="Views\index.html" />
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\Fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="Content\Fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="Content\Fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="Content\Fonts\glyphicons-halflings-regular.woff2" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>

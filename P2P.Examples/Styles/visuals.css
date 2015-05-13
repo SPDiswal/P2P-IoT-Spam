@@ -1,0 +1,19 @@
+﻿.axis path,
+.axis line
+{
+    fill: none;
+    shape-rendering: crispEdges;
+    stroke: white;
+}
+
+.axis text
+{
+    fill: white;
+}
+
+.line
+{
+    fill: none;
+    stroke: white;
+    stroke-width: 1.5px;
+}

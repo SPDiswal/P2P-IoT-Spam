@@ -1,6 +1,6 @@
 ﻿/// <reference path="../Scripts/typings/jasmine/jasmine.d.ts" />
 
-import GuidGenerator = require("../../P2P/Utilities/GuidGenerator");
+import GuidGenerator = require("../../P2P/Guids/GuidGenerator");
 
 describe("GUID generation", () =>
 {

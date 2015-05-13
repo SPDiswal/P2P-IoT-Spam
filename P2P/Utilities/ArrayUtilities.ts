@@ -1,5 +1,10 @@
 ﻿class ArrayUtilities
 {
+    public static distinct<T>(array: Array<T>): Array<T>
+    {
+        return array.filter((value, index) => ArrayUtilities.indexOfWithEquals(array, value) === index);
+    }
+
     public static equals<T>(first: Array<T>, second: Array<T>): boolean
     {
         if (!first || !second || first.length !== second.length) return false;
@@ -7,15 +12,11 @@
         for (var i = 0; i < this.length; i++)
         {
             if (first[i] instanceof Array && second[i] instanceof Array && !this.equals(<any>first[i], <any>second[i]))
-            {
                 return false;
-            }
             else if ((first[i].hasOwnProperty("equals") || first[i].constructor.prototype.hasOwnProperty("equals")))
             {
                 if (!(<any>first[i]).equals(second[i])) return false;
-            }
-            else
-            {
+                else
                 if (first[i] !== second[i]) return false;
             }
         }
@@ -23,14 +24,32 @@
         return true;
     }
 
+    public static find<T>(array: Array<T>, predicate: (element: T) => boolean): T
+    {
+        for (var i = 0; i < this.length; i++)
+            if (predicate(array[i])) return array[i];
+
+        return null;
+    }
+
+    public static contains<T>(array: Array<T>, element: T): boolean
+    {
+        return array.indexOf(element) >= 0;
+    }
+
+    public static flatten<T>(array: Array<Array<T>>): Array<T>
+    {
+        return (<Array<T>>[ ]).concat.apply(<Array<T>>[ ], array);
+    }
+
     public static intersection<T>(first: Array<T>, second: Array<T>): Array<T>
     {
         return first.filter(value => (second.indexOf(value) !== -1));
     }
 
-    public static distinct<T>(array: Array<T>): Array<T>
+    public static disjoint<T>(first: Array<T>, second: Array<T>): boolean
     {
-        return array.filter((value, index) => ArrayUtilities.indexOfWithEquals(array, value) === index);
+        return ArrayUtilities.intersection(first, second).length === 0;
     }
 
     public static indexOfWithEquals<T>(array: Array<T>, value: T): number

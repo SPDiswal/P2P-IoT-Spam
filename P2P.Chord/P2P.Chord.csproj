@@ -30,15 +30,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="Core\Chord.ts" />
+    <TypeScriptCompile Include="Core\LocalChordPeer.ts" />
     <TypeScriptCompile Include="Core\Constants.ts" />
-    <TypeScriptCompile Include="Interfaces\IRequestDispatcher.ts" />
-    <TypeScriptCompile Include="Utilities\Helpers.ts" />
+    <TypeScriptCompile Include="Core\RemoteChordPeer.ts" />
+    <TypeScriptCompile Include="Core\Responsibility.ts" />
+    <TypeScriptCompile Include="Interfaces\IPeer.ts" />
     <TypeScriptCompile Include="Interfaces\IDataRow.ts" />
-    <TypeScriptCompile Include="Interfaces\IResource.ts" />
-    <TypeScriptCompile Include="Interfaces\IResponse.ts" />
     <TypeScriptCompile Include="Core\Peer.ts" />
-    <TypeScriptCompile Include="Utilities\RequestDispatcher.ts" />
     <TypeScriptCompile Include="Scripts\typings\body-parser\body-parser.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\crypto\crypto.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\express.d.ts" />

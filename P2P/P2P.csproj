@@ -21,6 +21,7 @@
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="package.json" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>
@@ -29,33 +30,39 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="Core\Address.ts" />
-    <TypeScriptCompile Include="Core\Message.ts" />
-    <TypeScriptCompile Include="Core\SpamFramework.ts" />
-    <TypeScriptCompile Include="Core\Subscription.ts" />
-    <TypeScriptCompile Include="Interfaces\IAddress.ts" />
-    <TypeScriptCompile Include="Interfaces\IFramework.ts" />
-    <TypeScriptCompile Include="Interfaces\IGuidGenerator.ts" />
-    <TypeScriptCompile Include="Interfaces\IRoutingStrategy.ts" />
-    <TypeScriptCompile Include="Interfaces\IMessage.ts" />
-    <TypeScriptCompile Include="Interfaces\ISubscription.ts" />
+    <TypeScriptCompile Include="Filters\FilterParser.ts" />
+    <TypeScriptCompile Include="Filters\IFilterParser.ts" />
+    <TypeScriptCompile Include="Http\HttpMethod.ts" />
+    <TypeScriptCompile Include="Brokers\IBroker.ts" />
+    <TypeScriptCompile Include="Brokers\RestChordBroker.ts" />
+    <TypeScriptCompile Include="Common\Address.ts" />
+    <TypeScriptCompile Include="Common\Message.ts" />
+    <TypeScriptCompile Include="Common\Subscription.ts" />
+    <TypeScriptCompile Include="Core\IFramework.ts" />
+    <TypeScriptCompile Include="Core\Framework.ts" />
+    <TypeScriptCompile Include="Common\Filter.ts" />
+    <TypeScriptCompile Include="Filters\FilterEvaluator.ts" />
+    <TypeScriptCompile Include="Filters\IFilterEvaluator.ts" />
+    <TypeScriptCompile Include="Guids\GuidGenerator.ts" />
+    <TypeScriptCompile Include="Guids\IGuidGenerator.ts" />
+    <TypeScriptCompile Include="Http\IRequestDispatcher.ts" />
+    <TypeScriptCompile Include="Http\IResponse.ts" />
+    <TypeScriptCompile Include="Http\RequestDispatcher.ts" />
+    <TypeScriptCompile Include="Http\StatusCode.ts" />
+    <TypeScriptCompile Include="Routers\IRouter.ts" />
+    <TypeScriptCompile Include="Routers\SpanningTree\SpanningTreeRoutingStrategy.ts" />
+    <TypeScriptCompile Include="Routers\RouterMessages.ts" />
+    <TypeScriptCompile Include="Routers\SubscriberList\SubscriberListMessages.ts" />
+    <TypeScriptCompile Include="Routers\SubscriberList\SubscriberListRouter.ts" />
     <TypeScriptCompile Include="Scripts\typings\body-parser\body-parser.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\crypto\crypto.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\express.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\q\q.d.ts" />
-    <TypeScriptCompile Include="Strategies\SpanningTreeRoutingStrategy.ts" />
-    <TypeScriptCompile Include="Strategies\SubscriberListRoutingStrategy.ts" />
     <TypeScriptCompile Include="Utilities\ArrayUtilities.ts" />
-    <TypeScriptCompile Include="Utilities\GuidGenerator.ts" />
+    <TypeScriptCompile Include="Utilities\Helpers.ts" />
   </ItemGroup>
   <ItemGroup />
-  <ItemGroup>
-    <ProjectReference Include="..\P2P.Broker\P2P.Broker.csproj">
-      <Project>{1a1b4172-abc1-409e-a190-2a09dd88dec5}</Project>
-      <Name>P2P.Broker</Name>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">12.0</VisualStudioVersion>
   </PropertyGroup>
@@ -86,6 +93,7 @@
     <TypeScriptRemoveComments>false</TypeScriptRemoveComments>
     <TypeScriptSourceMap>true</TypeScriptSourceMap>
     <TypeScriptModuleKind>commonjs</TypeScriptModuleKind>
+    <TypeScriptTarget>ES5</TypeScriptTarget>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <TypeScriptRemoveComments>true</TypeScriptRemoveComments>
