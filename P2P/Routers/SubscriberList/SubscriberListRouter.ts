@@ -25,8 +25,6 @@ class SubscriberListRouter implements IRouter
         {
             var deferred = Q.defer<any>();
 
-            console.log(message);
-
             switch (message)
             {
                 case RouterMessages.MergeResponsibilities:
@@ -38,6 +36,10 @@ class SubscriberListRouter implements IRouter
 
                     deferred.resolve(new Responsibility(second.identifier, ArrayUtilities.union(firstSubscribers, secondSubscribers)));
                     return deferred.promise;
+
+                case RouterMessages.Heartbeat:
+                    this.cleanUpFailedPeers();
+                    break;
 
                 case SubscriberListMessages.GetSubscriberList:
                     deferred.resolve(this.getFilteredSubscriberList(Message.deserialise(data)));
@@ -69,8 +71,10 @@ class SubscriberListRouter implements IRouter
         });
     }
 
-    public publish(message: Message): void
+    public publish(message: Message): Promise<boolean>
     {
+        var deferred = Q.defer<boolean>();
+
         Q.all<Array<Subscription>>(message.tags.map(tag =>
         {
             // Looks up the responsible peers of each message tag and gets their subscriber lists.
@@ -79,30 +83,21 @@ class SubscriberListRouter implements IRouter
             //
         })).then(s =>
         {
-            // Sends the message to each subscriber.
             var subscribers = ArrayUtilities.distinct(ArrayUtilities.flatten(s));
 
-            Q.allSettled(subscribers.map(subscriber =>
-            {
-                return this.sendMessage(subscriber.address, message).then(() => subscriber);
-            })).then(results =>
-            {
-                var succeedingSubscribers = results.filter(r => r.state === "fulfilled").map(r => <Subscription>r.value);
-                var failedSubscribers = ArrayUtilities.except(subscribers, succeedingSubscribers);
+            // Sends the message to each subscriber.
+            Q.allSettled(subscribers.map(subscriber => this.sendMessage(subscriber.address, message)))
+                .then(() => deferred.resolve(true));
+            //
+        }).catch(() => deferred.reject("Failed to publish message " + message.id));
 
-                message.tags.map(tag =>
-                {
-                    this.lookup(tag).then(responsiblePeer => failedSubscribers.forEach(deadSubscription =>
-                    {
-                        this.removeSubscription(responsiblePeer, deadSubscription);
-                    }));
-                });
-            });
-        });
+        return deferred.promise;
     }
 
-    public subscribe(subscription: Subscription, retrieveOldMessages = false): void
+    public subscribe(subscription: Subscription, retrieveOldMessages = false): Promise<boolean>
     {
+        var deferred = Q.defer<boolean>();
+
         Q.all(subscription.tags.map(tag =>
         {
             // Looks up the responsible peers of each subscription tag.
@@ -110,22 +105,25 @@ class SubscriberListRouter implements IRouter
                 .then(responsiblePeer =>
                 {
                     // Adds this subscription to the subscriber lists of the responsible peers.
-                    this.addSubscription(responsiblePeer, subscription);
-
-                    // Requests responsible peers to publish all previous messages again to this peer exclusively.
-                    if (retrieveOldMessages) this.publishAgainExclusively(responsiblePeer, subscription);
+                    return this.addSubscription(responsiblePeer, subscription).then(() =>
+                    {
+                        // Requests responsible peers to publish all previous messages again to this peer exclusively.
+                        if (retrieveOldMessages) this.publishAgainExclusively(responsiblePeer, subscription);
+                    });
                 });
         })).then(() =>
         {
             this.localSubscriptions = this.localSubscriptions.filter(s => s.id !== subscription.id).concat([ subscription ]);
-        });
+            deferred.resolve(true);
+        }).catch(() => deferred.reject("Failed to subscribe to " + subscription.id));
+
+        return deferred.promise;
     }
 
-    public unsubscribe(id: string): void
+    public unsubscribe(id: string): Promise<boolean>
     {
+        var deferred = Q.defer<boolean>();
         var subscription = ArrayUtilities.find(this.localSubscriptions, s => s.id === id);
-
-        console.log("UNSUBSCRIBE " + JSON.stringify(subscription));
 
         if (subscription)
         {
@@ -136,13 +134,27 @@ class SubscriberListRouter implements IRouter
                 return this.lookup(tag)
                     .then(responsiblePeer => this.removeSubscription(responsiblePeer, subscription));
                 //
-            })).then(() => this.localSubscriptions = this.localSubscriptions.filter(s => s.id !== subscription.id));
+            })).then(() =>
+            {
+                this.localSubscriptions = this.localSubscriptions.filter(s => s.id !== subscription.id);
+                deferred.resolve(true);
+            }).catch(() => deferred.reject("Failed to unsubscribe from " + id));
         }
+        else
+            deferred.reject("No subscription with id " + id);
+
+        return deferred.promise;
     }
 
-    public join(domain: Address): void
+    public join(domain: Address): Promise<boolean>
     {
-        this.broker.send(this.address, HttpMethod.Post, RouterMessages.Join, domain);
+        var deferred = Q.defer<boolean>();
+
+        this.broker.send(this.address, HttpMethod.Post, RouterMessages.Join, domain)
+            .then(() => deferred.resolve(true))
+            .catch(() => deferred.reject("Failed to join the network"));
+
+        return deferred.promise;
     }
 
     // HELPERS: Incoming messages
@@ -167,7 +179,8 @@ class SubscriberListRouter implements IRouter
 
     private readMessage(message: Message)
     {
-        this.localSubscriptions.forEach(s =>
+        this.localSubscriptions.filter(s => !ArrayUtilities.disjoint(s.tags, message.tags)
+            && this.filterEvaluator.evaluate(s.filter, message)).forEach(s =>
         {
             if (!this.recentMessages.hasOwnProperty(message.id))
                 this.recentMessages[message.id] = <Array<string>>[ ];
@@ -189,11 +202,38 @@ class SubscriberListRouter implements IRouter
 
     private removeFromSubscriberList(subscription: Subscription)
     {
-        this.getAllResponsibilities(this.address)
-            .then(responsibilities => responsibilities.forEach(r =>
+        this.getAllResponsibilities(this.address).then(responsibilities => responsibilities.forEach(r =>
+        {
+            this.postResponsibility(this.address, new Responsibility(r.identifier, r.data.filter((s: any) => s.id !== subscription.id)));
+        }));
+    }
+
+    private cleanUpFailedPeers()
+    {
+        this.getAllResponsibilities(this.address).then(r =>
+        {
+            var allSubscriptions = ArrayUtilities.distinct(<Array<Subscription>>ArrayUtilities.flatten(r.map(t => t.data)));
+            var remoteSubscriptions = ArrayUtilities.except(allSubscriptions, this.localSubscriptions);
+
+            if (remoteSubscriptions.length > 0)
             {
-                this.postResponsibility(this.address, new Responsibility(r.identifier, r.data.filter((s: any) => s.id !== subscription.id)));
-            }));
+                // Pings each subscriber.
+                Q.allSettled(allSubscriptions.map(subscriber =>
+                {
+                    return this.ping(subscriber.address).then(() => subscriber);
+                    //
+                })).then(results =>
+                {
+                    // Removes subscriptions from failed peers.
+                    var liveSubscriptions = results.filter(q => q.state === "fulfilled").map(q => <Subscription>q.value);
+                    var failedSubscriptions = ArrayUtilities.except(allSubscriptions, liveSubscriptions);
+
+                    console.log(failedSubscriptions);
+
+                    failedSubscriptions.forEach(deadSubscription => this.removeSubscription(this.address, deadSubscription));
+                });
+            }
+        });
     }
 
     // HELPERS: Broker
@@ -227,6 +267,11 @@ class SubscriberListRouter implements IRouter
     private publishAgainExclusively(responsiblePeer: Address, subscription: Subscription)
     {
         return this.broker.send(responsiblePeer, HttpMethod.Post, SubscriberListMessages.PublishAgainExclusively, subscription);
+    }
+
+    private ping(subscriber: Address)
+    {
+        return this.broker.send(subscriber, HttpMethod.Get, RouterMessages.Ping, "");
     }
 
     private getResponsibility(responsiblePeer: Address, tag: string): Promise<Responsibility>

@@ -25,6 +25,9 @@ class RestChordBroker implements IBroker
     {
         switch (message)
         {
+            case RouterMessages.Ping:
+                return this.resolveOnNoContent(this.request.get(destination.toString() + "/ping"));
+
             case RouterMessages.Join:
                 return this.resolveOnNoContent(this.request.post(destination.toString() + "/join/" + (<Address>data).toString()));
 
@@ -46,17 +49,17 @@ class RestChordBroker implements IBroker
             case RouterMessages.DeleteResponsibility:
                 return this.resolveOnNoContent(this.request.delete(destination.toString() + "/responsibilities/" + data));
 
-            //    case "RetrieveAllMessages":
-            //        this.request.get(address + "/messages/" + <string>data);
-            //        break;
-            //    
-            //    case "Store":
-            //        this.request.put(address + "/messages", JSON.stringify(<IMessage>data));
-            //        break;
-            //    
-            //    case "Discard":
-            //        this.request.delete(address + "/messages");
-            //        break;
+            case RouterMessages.Retrieve:
+                return this.resolveOnSuccess(this.request.get(destination.toString() + "/data/" + data));
+
+            case RouterMessages.RetrieveSince:
+                return this.resolveOnSuccess(this.request.get(destination.toString() + "/data/" + data.identifier + "/" + data.timestamp));
+
+            case RouterMessages.Persist:
+                return this.resolveOnNoContent(this.request.put(destination.toString() + "/data", JSON.stringify(data)));
+
+            case RouterMessages.Sweep:
+                return this.resolveOnNoContent(this.request.delete(destination.toString() + "/data/" + data));
 
             default:
                 return this.resolveOnSuccess(this.request.send(method, destination.toString() + "/action/" + message, JSON.stringify(data)));

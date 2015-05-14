@@ -1,14 +1,16 @@
-﻿import BodyParser = require("body-parser");
+﻿/// <reference path="../Scripts/typings/nedb/nedb.d.ts" />
+
+import BodyParser = require("body-parser");
 import Express = require("express");
 //import File = require("fs");
+import NeDB = require("nedb");
 import Q = require("q");
-//import SQLite = require("sqlite3");
 
 import Application = Express.Application;
 import Promise = Q.Promise;
 
 import IBroker = require("../../P2P/Brokers/IBroker");
-import IPeer = require("../Interfaces/IPeer");
+import IPeer = require("./IPeer");
 
 import ArrayUtilities = require("../../P2P/Utilities/ArrayUtilities");
 import Constants = require("./Constants");
@@ -40,15 +42,30 @@ class LocalChordPeer implements IPeer
     private fixSuccessorsInterval: any;
     private checkResponsibilitiesInterval: any;
     private checkReplicationsInterval: any;
+    private heartbeatInterval: any;
 
     private responsibilities: Array<Responsibility> = [ ];
     private replications: Array<Responsibility> = [ ];
+
+    private database: NeDB;
 
     constructor(app: Application, private broker: IBroker, private _address: string, private endpoint: string, private isLogging = false)
     {
         if (endpoint.length > 0 && endpoint[0] !== "/") this.endpoint = "/" + endpoint;
         this._id = Helpers.hash(_address);
 
+        this.setUpDatabase();
+        this.setUpEndpoints(app);
+    }
+
+    private setUpDatabase()
+    {
+        var dataPath = __dirname + "/Data/" + Helpers.hash(this.address) + ".db";
+        this.database = new NeDB({ filename: dataPath, autoload: true });
+    }
+
+    private setUpEndpoints(app: Application)
+    {
         var jsonParser = BodyParser.json();
 
         app.get(this.endpoint + "/lookup/:key", (req, res) =>
@@ -209,33 +226,33 @@ class LocalChordPeer implements IPeer
         {
             this.getResponsibility(req.params.identifier).then(p =>
                 {
-                    if (p !== null)
-                    {
-                        console.log(p);
-                        res.status(StatusCode.Ok).json(p);
-                    }
+                    if (p !== null) res.status(StatusCode.Ok).json(p);
                     else res.sendStatus(StatusCode.NotFound);
                 }
             ).catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
+
         app.get(this.endpoint + "/responsibilities", (req, res) =>
         {
             this.getResponsibilities()
                 .then(p => res.status(StatusCode.Ok).json(p))
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
+
         app.post(this.endpoint + "/responsibilities", jsonParser, (req, res) =>
         {
             this.postResponsibility(req.body)
                 .then(() => res.sendStatus(StatusCode.NoContent))
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
+
         app.put(this.endpoint + "/responsibilities", jsonParser, (req, res) =>
         {
             this.putResponsibility(req.body)
                 .then(() => res.sendStatus(StatusCode.NoContent))
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
+
         app.delete(this.endpoint + "/responsibilities/:identifier", (req, res) =>
         {
             this.deleteResponsibility(req.params.identifier)
@@ -247,33 +264,33 @@ class LocalChordPeer implements IPeer
         {
             this.getReplication(req.params.identifier).then(p =>
                 {
-                    if (p !== null)
-                    {
-                        console.log(p);
-                        res.status(StatusCode.Ok).json(p);
-                    }
+                    if (p !== null) res.status(StatusCode.Ok).json(p);
                     else res.sendStatus(StatusCode.NotFound);
                 }
             ).catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
+
         app.get(this.endpoint + "/replications", (req, res) =>
         {
             this.getReplications()
                 .then(p => res.status(StatusCode.Ok).json(p))
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
+
         app.post(this.endpoint + "/replications", jsonParser, (req, res) =>
         {
             this.postReplication(req.body)
                 .then(() => res.sendStatus(StatusCode.NoContent))
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
+
         app.put(this.endpoint + "/replications", jsonParser, (req, res) =>
         {
             this.putReplication(req.body)
                 .then(() => res.sendStatus(StatusCode.NoContent))
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
+
         app.delete(this.endpoint + "/replications/:identifier", (req, res) =>
         {
             this.deleteReplication(req.params.identifier)
@@ -281,10 +298,21 @@ class LocalChordPeer implements IPeer
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
 
-        //        app.get(this.endpoint + "/retrieve/:tag", (req, res) => { });
-        //        app.get(this.endpoint + "/retrieve/:tag/:timestamp", (req, res) => { });
-        //        app.put(this.endpoint + "/persist", (req, res) => { });
-        //        app.delete(this.endpoint + "/sweep", (req, res) => { });
+        app.get(this.endpoint + "/data/:tag", (req, res) =>
+        {
+        });
+
+        app.get(this.endpoint + "/data/:tag/:timestamp", (req, res) =>
+        {
+        });
+
+        app.put(this.endpoint + "/data", jsonParser, (req, res) =>
+        {
+        });
+
+        app.delete(this.endpoint + "/data/:timestamp", (req, res) =>
+        {
+        });
     }
 
     public get address(): string
@@ -491,9 +519,6 @@ class LocalChordPeer implements IPeer
         peer.ping().then<string>(() => peer.lookup(this.id)).then(p =>
         {
             this.resetToSinglePeer(p);
-
-            // TODO Replication
-
             deferred.resolve((void 0));
         }).catch(() => deferred.reject((void 0)));
 
@@ -510,10 +535,6 @@ class LocalChordPeer implements IPeer
             {
                 this.successor.setPredecessor(this.predecessor.address).then(() =>
                 {
-                    // TODO Replication
-                    //                    for (var j = this.tagResponsibilities.length - 1; j >= 0; j--)
-                    //                        this.moveTagResponsibility(this.successor, this.tagResponsibilities[j]);
-
                     this.run();
                 });
             });
@@ -730,6 +751,8 @@ class LocalChordPeer implements IPeer
 
     private checkReplications()
     {
+        // TODO Merge database of replicating peers with own database to ensure up-to-date contents
+
         this.replications = ArrayUtilities.except(this.replications, this.responsibilities);
 
         for (var i = this.replications.length - 1; i >= 0; i--)
@@ -746,6 +769,11 @@ class LocalChordPeer implements IPeer
                 });
             })(i);
         }
+    }
+
+    private sendHeartbeat()
+    {
+        this.broker.delegate(RouterMessages.Heartbeat, null);
     }
 
     private resetToSinglePeer(knownPeer: string)
@@ -774,6 +802,7 @@ class LocalChordPeer implements IPeer
         clearInterval(this.checkPredecessorInterval);
         clearInterval(this.checkResponsibilitiesInterval);
         clearInterval(this.checkReplicationsInterval);
+        clearInterval(this.heartbeatInterval);
     }
 
     public run()
@@ -781,7 +810,7 @@ class LocalChordPeer implements IPeer
         this.log("Chord peer running at " + this.address + "\n");
         this.resetToSinglePeer(this.address);
 
-        var numberOfIntervals = 6;
+        var numberOfIntervals = 7;
 
         this.stabiliseInterval = setInterval(() => this.stabilise(), Constants.StabiliseInterval);
         this.checkPredecessorInterval = setTimeout(() => setInterval(() => this.checkPredecessor(), Constants.StabiliseInterval), 1 * Constants.StabiliseInterval / numberOfIntervals);
@@ -789,22 +818,12 @@ class LocalChordPeer implements IPeer
         this.fixSuccessorsInterval = setTimeout(() => setInterval(() => this.fixSuccessors(), Constants.StabiliseInterval), 3 * Constants.StabiliseInterval / numberOfIntervals);
         this.checkResponsibilitiesInterval = setTimeout(() => setInterval(() => this.checkResponsibilities(), Constants.StabiliseInterval), 4 * Constants.StabiliseInterval / numberOfIntervals);
         this.checkReplicationsInterval = setTimeout(() => setInterval(() => this.checkReplications(), Constants.StabiliseInterval), 5 * Constants.StabiliseInterval / numberOfIntervals);
-
-        // TODO checkResponsibilitiesInterval (which ensures that responsibilities are stored at the right peer and moved otherwise)
-        // TODO replicateInterval (which ensures that replicates of responsibilities are registered and refreshed at the right peers - also merges database of replicating peers with own database to ensure up-to-date contents)
-        // TODO heartbeatInterval (which triggers a recurring action on the router via the broker such as repairing spanning trees)
+        this.heartbeatInterval = setTimeout(() => setInterval(() => this.sendHeartbeat(), Constants.StabiliseInterval), 6 * Constants.StabiliseInterval / numberOfIntervals);
     }
 }
 
 export = LocalChordPeer;
 
-//    // Resources.
-//    private tagResponsibilities: Array<string> = [ ];
-//    private replicatedTags: Array<string> = [ ];
-//
-//    private moveTagResponsibilityTimeout = 0;
-//
-//    // Database.
 //    private insertStatement: SQLite.Statement;
 //    private insertWithTimestampStatement: SQLite.Statement;
 //    private selectStatement: SQLite.Statement;
@@ -822,10 +841,6 @@ export = LocalChordPeer;
 //
 //    private messagesTable = "CREATE TABLE IF NOT EXISTS Messages (Id VARCHAR(255), Contents TEXT, Tags TEXT, Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(Id))";
 //    private tagsTable = "CREATE TABLE IF NOT EXISTS Tags (TagName TEXT, UNIQUE(Id))";
-//
-//
-//
-//    var jsonParser = BodyParser.json();
 //
 //    // Sets up SQLite database.
 //    var dataPath = __dirname + "/Data/" + Helpers.hash(address) + ".db";
@@ -846,8 +861,6 @@ export = LocalChordPeer;
 //        // Launches the chord service locally on the given port.
 //        app.listen(port, host,() => chord.goLive());
 //    });
-//    
-//    
 //    
 //    public listFingers(req: Express.Request, res: Express.Response)
 //    {

@@ -1,7 +1,10 @@
 ﻿import Express = require("express");
 import Application = Express.Application;
+import Q = require("q");
+import Promise = Q.Promise;
 
 import IBroker = require("../Brokers/IBroker");
+import IFilterEvaluator = require("../Filters/IFilterEvaluator");
 import IFramework = require("./IFramework");
 import IGuidGenerator = require("../Guids/IGuidGenerator");
 import IRouter = require("../Routers/IRouter");
@@ -21,7 +24,7 @@ class Framework implements IFramework
 {
     private chord: LocalChordPeer;
     private guidGenerator: IGuidGenerator = new GuidGenerator();
-    private parser: FilterParser;
+    private evaluator: IFilterEvaluator = new FilterEvaluator(new FilterParser());
 
     private address: Address;
     private isRunning = false;
@@ -29,42 +32,49 @@ class Framework implements IFramework
     constructor(app: Application, host: string, port: number, endpoint: string = "spam", private router: IRouter = null, private broker: IBroker = null)
     {
         this.address = Address.fromHostPort(host, port);
-        this.parser = new FilterParser();
 
         if (this.broker === null) this.broker = new RestChordBroker(this.address, new RequestDispatcher());
-        if (this.router === null) this.router = new SubscriberListRouter(this.address, this.broker, new FilterEvaluator());
+        if (this.router === null) this.router = new SubscriberListRouter(this.address, this.broker, this.evaluator);
 
         this.chord = new LocalChordPeer(app, this.broker, host + ":" + port, endpoint);
     }
 
-    public publish(tags: Array<string>, contents: any): void
+    public publish(tags: Array<string>, contents: any): Promise<boolean>
     {
-        this.guard(() => this.router.publish(new Message(contents, tags, this.guidGenerator)));
+        return this.guard(() => this.router.publish(new Message(contents, tags, this.guidGenerator)));
     }
 
-    public subscribe(tags: Array<string>, callback: (tags: Array<string>, contents: any) => void, retrieveOldMessages: boolean = false): string
+    public subscribe(tags: Array<string>, callback: (tags: Array<string>, contents: any) => void, retrieveOldMessages: boolean = false): Promise<string>
     {
         return this.subscribeToContents(tags, "true", callback, retrieveOldMessages);
     }
 
-    public subscribeToContents(tags: Array<string>, filter: string, callback: (tags: Array<string>, contents: any) => void, retrieveOldMessages: boolean = false): string
+    public subscribeToContents(tags: Array<string>, filter: string, callback: (tags: Array<string>, contents: any) => void, retrieveOldMessages: boolean = false): Promise<string>
     {
         return this.guard(() =>
         {
-            var subscription = new Subscription(this.address, tags, this.parser.parse(filter), (m: Message) => callback(m.tags, m.contents), this.guidGenerator);
-            this.router.subscribe(subscription, retrieveOldMessages);
-            return subscription.id;
+            var deferred = Q.defer<string>();
+            var subscription = new Subscription(this.address, tags, filter, (m: Message) => callback(m.tags, m.contents), this.guidGenerator);
+
+            this.router.subscribe(subscription, retrieveOldMessages)
+                .then(r =>
+                {
+                    if (r) deferred.resolve(subscription.id);
+                    else deferred.reject("Failed to subscribe to " + subscription.id);
+                });
+
+            return deferred.promise;
         });
     }
 
-    public unsubscribe(id: string): void
+    public unsubscribe(id: string): Promise<boolean>
     {
-        this.guard(() => this.router.unsubscribe(id));
+        return this.guard(() => this.router.unsubscribe(id));
     }
 
-    public join(domainHost: string, domainPort: number): void
+    public join(domainHost: string, domainPort: number): Promise<boolean>
     {
-        this.guard(() => this.router.join(Address.fromHostPort(domainHost, domainPort)));
+        return this.guard(() => this.router.join(Address.fromHostPort(domainHost, domainPort)));
     }
 
     public run(): void

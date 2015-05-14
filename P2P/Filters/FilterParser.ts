@@ -1,10 +1,10 @@
 ﻿import IFilterParser = require("./IFilterParser");
 
-import Filter = require("../Common/Filter");
+import Filter = require("./Filter");
 
 class FilterParser implements IFilterParser
 {
-    public parse(filter: string): Filter
+    public parse(filterExpression: string): Filter
     {
         return new Filter();
     }

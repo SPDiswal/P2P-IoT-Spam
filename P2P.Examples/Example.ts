@@ -56,10 +56,13 @@ class Example
         {
             res.sendStatus(StatusCode.NoContent);
             //            console.log("New subscription: " + framework.subscribe(req.body.tags, (tags: Array<string>, contents: any) => console.log("New message: " + tags + " " + contents)));
-            console.log("New subscription: " + framework.subscribe([ "weather" ], (tags: Array<string>, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents))));
+
+            framework.subscribe([ "weather" ], (tags: Array<string>, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents)))
+                .then(s => console.log("New subscription: " + s));
         });
 
-        app.post("/unsubscribe/:id", (req, res) => {
+        app.post("/unsubscribe/:id", (req, res) =>
+        {
             res.sendStatus(StatusCode.NoContent);
             framework.unsubscribe(req.params.id);
         });
@@ -73,7 +76,7 @@ class Example
         app.listen(port, host, () =>
         {
             framework.run();
-//            console.log("New subscription: " + framework.subscribe(["weather"],(tags: Array<string>, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents))));
+            //            console.log("New subscription: " + framework.subscribe(["weather"],(tags: Array<string>, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents))));
         });
     }
 }

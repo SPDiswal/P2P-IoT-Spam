@@ -33,11 +33,12 @@
     <TypeScriptCompile Include="Core\LocalChordPeer.ts" />
     <TypeScriptCompile Include="Core\Constants.ts" />
     <TypeScriptCompile Include="Core\RemoteChordPeer.ts" />
-    <TypeScriptCompile Include="Interfaces\IPeer.ts" />
+    <TypeScriptCompile Include="Core\IPeer.ts" />
     <TypeScriptCompile Include="Interfaces\IDataRow.ts" />
     <TypeScriptCompile Include="Scripts\typings\body-parser\body-parser.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\crypto\crypto.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\express.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\nedb\nedb.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\q\q.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\sqlite3\sqlite3.d.ts" />

@@ -1,8 +1,8 @@
-﻿import Filter = require("../Common/Filter");
+﻿import Filter = require("./Filter");
 
 interface IFilterParser
 {
-    parse(filter: string): Filter;
+    parse(filterExpression: string): Filter;
 }
 
 export = IFilterParser;

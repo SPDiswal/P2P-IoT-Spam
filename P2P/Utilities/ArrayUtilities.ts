@@ -49,12 +49,12 @@
 
     public static intersection<T>(first: Array<T>, second: Array<T>): Array<T>
     {
-        return first.filter(value => (second.indexOf(value) !== -1));
+        return first.filter(value => (ArrayUtilities.indexOfWithEquals(second, value) !== -1));
     }
 
     public static except<T>(first: Array<T>, second: Array<T>): Array<T>
     {
-        return first.filter(value => (second.indexOf(value) === -1));
+        return first.filter(value => (ArrayUtilities.indexOfWithEquals(second, value) === -1));
     }
 
     public static disjoint<T>(first: Array<T>, second: Array<T>): boolean

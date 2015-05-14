@@ -1,7 +1,7 @@
 ﻿import Q = require("q");
 import Promise = Q.Promise;
 
-import IPeer = require("../Interfaces/IPeer");
+import IPeer = require("./IPeer");
 import IResponse = require("../../P2P/Http/IResponse");
 
 import Constants = require("./Constants");

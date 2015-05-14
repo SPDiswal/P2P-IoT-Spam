@@ -41,7 +41,7 @@
     <TypeScriptCompile Include="Common\Subscription.ts" />
     <TypeScriptCompile Include="Core\IFramework.ts" />
     <TypeScriptCompile Include="Core\Framework.ts" />
-    <TypeScriptCompile Include="Common\Filter.ts" />
+    <TypeScriptCompile Include="Filters\Filter.ts" />
     <TypeScriptCompile Include="Filters\FilterEvaluator.ts" />
     <TypeScriptCompile Include="Filters\IFilterEvaluator.ts" />
     <TypeScriptCompile Include="Guids\GuidGenerator.ts" />

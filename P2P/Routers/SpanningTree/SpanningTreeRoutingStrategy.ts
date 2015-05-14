@@ -1,16 +1,31 @@
-﻿import IRouter = require("../IRouter");
+﻿import Q = require("q");
+import Promise = Q.Promise;
+
+import IRouter = require("../IRouter");
 
 import Address = require("../../Common/Address");
 import Message = require("../../Common/Message");
 import Subscription = require("../../Common/Subscription");
 
-class SpanningTreeRoutingStrategy implements IRouter
+class SpanningTreeRouter implements IRouter
 {
-    public publish(message: Message): void { }
+    public publish(message: Message): Promise<boolean>
+    {
+        throw new Error("Not implemented");
+    }
 
-    public subscribe(subscription: Subscription): void { }
+    public subscribe(subscription: Subscription, retrieveOldMessages?: boolean): Promise<boolean>
+    {
+        throw new Error("Not implemented");
+    }
 
-    public unsubscribe(id: string): void { }
+    public unsubscribe(id: string): Promise<boolean>
+    {
+        throw new Error("Not implemented");
+    }
 
-    public join(domain: Address): void { }
+    public join(domain: Address): Promise<boolean>
+    {
+        throw new Error("Not implemented");
+    }
 }
