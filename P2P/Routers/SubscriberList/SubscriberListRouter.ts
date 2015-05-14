@@ -39,6 +39,9 @@ class SubscriberListRouter implements IRouter
 
                 case RouterMessages.Heartbeat:
                     this.cleanUpFailedPeers();
+
+                    // TODO Clean up database with deleteData.
+
                     break;
 
                 case SubscriberListMessages.GetSubscriberList:
@@ -50,7 +53,7 @@ class SubscriberListRouter implements IRouter
                     break;
 
                 case SubscriberListMessages.MultipleMessages:
-                    // TODO
+                    // TODO Read each message.
                     break;
 
                 case SubscriberListMessages.AddSubscription:
@@ -62,7 +65,7 @@ class SubscriberListRouter implements IRouter
                     break;
 
                 case SubscriberListMessages.PublishAgainExclusively:
-                    // TODO
+                    // TODO Call getData/:tag, construct array of messages, send MultipleMessages.
                     break;
             }
 
@@ -83,6 +86,8 @@ class SubscriberListRouter implements IRouter
             //
         })).then(s =>
         {
+            // TODO Store message in database.
+
             var subscribers = ArrayUtilities.distinct(ArrayUtilities.flatten(s));
 
             // Sends the message to each subscriber.

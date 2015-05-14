@@ -51,8 +51,10 @@
     <TypeScriptCompile Include="Http\RequestDispatcher.ts" />
     <TypeScriptCompile Include="Http\StatusCode.ts" />
     <TypeScriptCompile Include="Routers\IRouter.ts" />
-    <TypeScriptCompile Include="Routers\SpanningTree\SpanningTreeRoutingStrategy.ts" />
+    <TypeScriptCompile Include="Routers\SpanningTree\SpanningTreeNode.ts" />
+    <TypeScriptCompile Include="Routers\SpanningTree\SpanningTreeRouter.ts" />
     <TypeScriptCompile Include="Routers\RouterMessages.ts" />
+    <TypeScriptCompile Include="Routers\SpanningTree\SpanningTreeMessages.ts" />
     <TypeScriptCompile Include="Routers\SubscriberList\SubscriberListMessages.ts" />
     <TypeScriptCompile Include="Routers\SubscriberList\SubscriberListRouter.ts" />
     <TypeScriptCompile Include="Scripts\typings\body-parser\body-parser.d.ts" />

@@ -30,6 +30,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="Core\DataRow.ts" />
     <TypeScriptCompile Include="Core\LocalChordPeer.ts" />
     <TypeScriptCompile Include="Core\Constants.ts" />
     <TypeScriptCompile Include="Core\RemoteChordPeer.ts" />

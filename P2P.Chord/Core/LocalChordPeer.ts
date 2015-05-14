@@ -1,4 +1,6 @@
-﻿/// <reference path="../Scripts/typings/nedb/nedb.d.ts" />
+﻿// TODO Replicate data.
+
+/// <reference path="../Scripts/typings/nedb/nedb.d.ts" />
 
 import BodyParser = require("body-parser");
 import Express = require("express");
@@ -14,7 +16,9 @@ import IPeer = require("./IPeer");
 
 import ArrayUtilities = require("../../P2P/Utilities/ArrayUtilities");
 import Constants = require("./Constants");
+import DataRow = require("./DataRow");
 import Helpers = require("../../P2P/Utilities/Helpers");
+import Message = require("../../P2P/Common/Message");
 import RemoteChordPeer = require("./RemoteChordPeer");
 import Responsibility = require("../../P2P/Common/Responsibility");
 import RouterMessages = require("../../P2P/Routers/RouterMessages");
@@ -60,7 +64,7 @@ class LocalChordPeer implements IPeer
 
     private setUpDatabase()
     {
-        var dataPath = __dirname + "/Data/" + Helpers.hash(this.address) + ".db";
+        var dataPath = __dirname + "/../Data/" + this.id + ".db";
         this.database = new NeDB({ filename: dataPath, autoload: true });
     }
 
@@ -298,20 +302,39 @@ class LocalChordPeer implements IPeer
                 .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
 
+        app.get(this.endpoint + "/data", (req, res) =>
+        {
+            this.getAllData()
+                .then(messages => res.status(StatusCode.Ok).json(messages))
+                .catch(() => res.sendStatus(StatusCode.InternalServerError));
+        });
+
         app.get(this.endpoint + "/data/:tag", (req, res) =>
         {
+            this.getData(req.params.tag)
+                .then(messages => res.status(StatusCode.Ok).json(messages))
+                .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
 
         app.get(this.endpoint + "/data/:tag/:timestamp", (req, res) =>
         {
+            this.getDataSince(req.params.tag, new Date(req.params.timestamp))
+                .then(messages => res.status(StatusCode.Ok).json(messages))
+                .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
 
         app.put(this.endpoint + "/data", jsonParser, (req, res) =>
         {
+            this.putData(req.body)
+                .then(() => res.sendStatus(StatusCode.NoContent))
+                .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
 
         app.delete(this.endpoint + "/data/:timestamp", (req, res) =>
         {
+            this.deleteData(new Date(req.params.timestamp))
+                .then(() => res.sendStatus(StatusCode.NoContent))
+                .catch(() => res.sendStatus(StatusCode.InternalServerError));
         });
     }
 
@@ -626,6 +649,75 @@ class LocalChordPeer implements IPeer
     public deleteReplication(identifier: string): Promise<void>
     {
         this.replications = this.replications.filter(r => r.identifier !== identifier);
+        return Helpers.resolvedUnit();
+    }
+
+    public getAllData(): Promise<Array<Message>>
+    {
+        var deferred = Q.defer<Array<any>>();
+
+        this.database.find({ }, (error: Error, rows: Array<any>) =>
+        {
+            deferred.resolve(rows.map((r: any) =>
+            {
+                var contents = r._contents;
+                contents.id = r._id;
+                return Message.deserialise(contents);
+            }));
+        });
+
+        return deferred.promise;
+    }
+
+    public getData(tag: string): Promise<Array<Message>>
+    {
+        var deferred = Q.defer<Array<any>>();
+
+        this.database.find({
+            $where()
+            {
+                return ArrayUtilities.contains(this._contents.tags, tag);
+            }
+        }, (error: Error, rows: Array<any>) => deferred.resolve(rows.map((r: any) =>
+        {
+            var contents = r._contents;
+            contents.id = r._id;
+            return Message.deserialise(contents);
+        })));
+
+        return deferred.promise;
+    }
+
+    public getDataSince(tag: string, timestamp: Date): Promise<Array<Message>>
+    {
+        var deferred = Q.defer<Array<any>>();
+
+        this.database.find({
+            $where()
+            {
+                return ArrayUtilities.contains(this._contents.tags, tag) && this._timestamp >= timestamp;
+            }
+        }, (error: Error, rows: Array<any>) => deferred.resolve(rows.map((r: any) =>
+        {
+            var contents = r._contents;
+            contents.id = r._id;
+            return Message.deserialise(contents);
+        })));
+
+        return deferred.promise;
+    }
+
+    public putData(incomingData: Message): Promise<void>
+    {
+        var data = JSON.parse(JSON.stringify(incomingData));
+        delete data["id"];
+        this.database.insert(new DataRow(incomingData.id, data, new Date()));
+        return Helpers.resolvedUnit();
+    }
+
+    public deleteData(timestamp: Date): Promise<void>
+    {
+        this.database.remove({ _timestamp: { $lt: timestamp } }, { multi: true });
         return Helpers.resolvedUnit();
     }
 

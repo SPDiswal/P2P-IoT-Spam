@@ -17,6 +17,7 @@ import LocalChordPeer = require("../../P2P.Chord/Core/LocalChordPeer");
 import Message = require("../Common/Message");
 import RequestDispatcher = require("../Http/RequestDispatcher");
 import RestChordBroker = require("../Brokers/RestChordBroker");
+import SpanningTreeRouter = require("../Routers/SpanningTree/SpanningTreeRouter");
 import SubscriberListRouter = require("../Routers/SubscriberList/SubscriberListRouter");
 import Subscription = require("../Common/Subscription");
 
@@ -34,7 +35,7 @@ class Framework implements IFramework
         this.address = Address.fromHostPort(host, port);
 
         if (this.broker === null) this.broker = new RestChordBroker(this.address, new RequestDispatcher());
-        if (this.router === null) this.router = new SubscriberListRouter(this.address, this.broker, this.evaluator);
+        if (this.router === null) this.router = new SpanningTreeRouter(this.address, this.broker, this.evaluator);
 
         this.chord = new LocalChordPeer(app, this.broker, host + ":" + port, endpoint);
     }
