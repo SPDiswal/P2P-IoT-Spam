@@ -13,6 +13,7 @@ class Message
 
     public equals(that: Message): boolean
     {
+        if (!that) return false;
         return this.id === that.id;
     }
 

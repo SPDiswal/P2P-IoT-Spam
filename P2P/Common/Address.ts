@@ -20,6 +20,7 @@
 
     public equals(that: Address): boolean
     {
+        if (!that) return false;
         return this.host === that.host && this.port === that.port;
     }
 

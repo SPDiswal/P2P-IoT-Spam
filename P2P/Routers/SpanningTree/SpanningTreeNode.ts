@@ -4,10 +4,9 @@ import Helpers = require("../../Utilities/Helpers");
 
 class SpanningTreeNode
 {
-    constructor(public address: Address/*, public tag: string*/)
+    constructor(public address: Address /*, public tag: string*/)
     {
-        this.address = address;
-//        this.tag = tag;
+        //        this.tag = tag;
         this.key = Helpers.hash(address.toString());
     }
 
@@ -15,7 +14,20 @@ class SpanningTreeNode
     public left: Address;
     public right: Address;
     public parent: Address;
-    public subscription: Subscription;
+
+    //    public subscription: Subscription;
+
+    public static deserialise(input: any): SpanningTreeNode
+    {
+        var node = new SpanningTreeNode(Address.deserialise(input.address));
+        node.key = input.key;
+        // node.tag = input.tag;
+        node.left = input.left ? Address.deserialise(input.left) : null;
+        node.right = input.right ? Address.deserialise(input.right) : null;
+        node.parent = input.parent ? Address.deserialise(input.parent) : null;
+        //        node.subscription = input.subscription ? Subscription.deserialise(input.subscription) : null;
+        return node;
+    }
 }
 
 export = SpanningTreeNode;

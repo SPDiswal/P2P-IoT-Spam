@@ -19,6 +19,7 @@ class Subscription
 
     public equals(that: Subscription): boolean
     {
+        if (!that) return false;
         return this.id === that.id;
     }
 

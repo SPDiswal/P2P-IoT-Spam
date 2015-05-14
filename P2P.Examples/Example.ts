@@ -58,7 +58,8 @@ class Example
             //            console.log("New subscription: " + framework.subscribe(req.body.tags, (tags: Array<string>, contents: any) => console.log("New message: " + tags + " " + contents)));
 
             framework.subscribe([ "weather" ], (tags: Array<string>, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents)))
-                .then(s => console.log("New subscription: " + s));
+                .then(s => console.log("New subscription: " + s))
+                .catch(e => console.log(e));
         });
 
         app.post("/unsubscribe/:id", (req, res) =>
