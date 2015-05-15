@@ -157,8 +157,6 @@ class SpanningTreeRouter implements IRouter
             .then(() => deferred.resolve(true))
             .catch(() => deferred.reject("Failed to join the network"));
 
-        // TODO Fix spanning tree when re-joining.
-
         return deferred.promise;
     }
 
@@ -181,26 +179,27 @@ class SpanningTreeRouter implements IRouter
 
     private repairChildLinks(node: SpanningTreeNode, tag: string)
     {
-        if (node.left) this.ping(node.left).catch(() => delete this.nodes[tag]["left"]);
-        if (node.right) this.ping(node.right).catch(() => delete this.nodes[tag]["right"]);
+        if (node.left) this.ping(node.left).then(() => this.setParent(node.left, tag, this.address)).catch(() => delete this.nodes[tag]["left"]);
+        if (node.right) this.ping(node.right).then(() => this.setParent(node.right, tag, this.address)).catch(() => delete this.nodes[tag]["right"]);
     }
 
     private repairParentLink(node: SpanningTreeNode, tag: string)
     {
         if (node.parent)
         {
-            this.ping((node.parent)).then(() =>
+            this.getNode(node.parent, tag).then(parent =>
             {
-                // TODO Fix spanning tree when ancestor (parent, grand-parent etc.) fails and this peer (child, grand-child etc.) becomes new responsible peer/root. Needs to break bonds with current parent to become root.
-
-                // BUG Four nodes 80-83, all joined and subscribing. Manually crash 80, then 83. 82 then either crashes by itself (due to some variable being undefined) or link between 81 and 82 is broken.
-
                 this.lookup(tag).then(root =>
                 {
                     if (root.equals(this.address))
                     {
                         this.setLeft(node.parent, tag, null);
                         delete this.nodes[tag]["parent"];
+                    }
+                    else
+                    {
+                        if (parent.key > node.key) this.setLeft(node.parent, tag, node.address);
+                        else this.setRight(node.parent, tag, node.address);
                     }
                 });
             }).catch(() =>
@@ -216,6 +215,25 @@ class SpanningTreeRouter implements IRouter
                     n.right = right;
                     this.nodes[tag] = n;
                 }));
+            });
+        }
+        else
+        {
+            this.lookup(tag).then(root =>
+            {
+                if (!root.equals(this.address))
+                {
+                    var left = node.left;
+                    var right = node.right;
+                    this.nodes[tag] = new SpanningTreeNode(this.address);
+
+                    this.insert(root, tag).then(n =>
+                    {
+                        n.left = left;
+                        n.right = right;
+                        this.nodes[tag] = n;
+                    });
+                }
             });
         }
     }
@@ -259,12 +277,11 @@ class SpanningTreeRouter implements IRouter
             var alreadyInTree = false;
             var x = n;
             var y: SpanningTreeNode = null;
-            var z = new SpanningTreeNode(this.address /*, tag*/);
+            var z = new SpanningTreeNode(this.address);
 
             Helpers.promiseWhile(() => !!x, () =>
             {
-                if (this.address.equals(x.address) || this.address.equals(x.left)
-                    || this.address.equals(x.right) || this.address.equals(x.parent))
+                if (this.address.equals(x.address) /* || this.address.equals(x.left) || this.address.equals(x.right)*/)
                 {
                     alreadyInTree = true;
                     return Helpers.resolvedUnit().then(() => x = null);
@@ -377,7 +394,6 @@ class SpanningTreeRouter implements IRouter
 
     private setRight(peer: Address, tag: string, right: Address): Promise<void>
     {
-        //        console.log("SETTING RIGHT OF " + JSON.stringify(peer.toString()));
         return this.broker.send(peer, SpanningTreeMessages.SetRight, { tag: tag, address: right });
     }
 

@@ -41,7 +41,7 @@ class RestChordBroker implements IBroker
 
             case RouterMessages.PostResponsibility:
                 return this.resolveOnNoContent(this.request.post(destination.toString() + "/responsibilities", JSON.stringify(data)));
-
+                
             case RouterMessages.PutResponsibility:
                 return this.resolveOnNoContent(this.request.put(destination.toString() + "/responsibilities", JSON.stringify(data)));
 

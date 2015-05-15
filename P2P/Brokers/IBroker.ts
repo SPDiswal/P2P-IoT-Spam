@@ -9,7 +9,7 @@ interface IBroker
     // Called by router, may expect return value from broker (delivered by low-level network).
     // Remember to hash before lookup.
     send(destination: Address, message: string, data: any): Promise<any>;
-
+    
     // For example:
     // .send(self address, "lookup", "tag") -> address of responsible peer
     // .send(address of responsible peer, "message", {...data...}) -> void
