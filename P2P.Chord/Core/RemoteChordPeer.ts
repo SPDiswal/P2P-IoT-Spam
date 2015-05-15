@@ -138,16 +138,26 @@ class RemoteChordPeer implements IPeer
             .then((r: any) => r.map((m: any) => Message.deserialise(m)));
     }
 
-    public getData(tag: string): Promise<Array<Message>>
+    public getAllDataSince(timestamp: string): Promise<Array<Message>>
     {
-        return this.resolveData(this.request.get(this.address + this.endpoint + "/data/" + tag).timeout(Constants.Timeout))
+        return this.resolveData(this.request.get(this.address + this.endpoint + "/data/timestamp/" + timestamp).timeout(Constants.Timeout))
             .then((r: any) => r.map((m: any) => Message.deserialise(m)));
     }
 
-    public getDataSince(tag: string, timestamp: Date): Promise<Array<Message>>
+    public getData(tag: string): Promise<Array<Message>>
     {
-        return this.resolveData(this.request.get(this.address + this.endpoint + "/data/" + tag + "/" + timestamp).timeout(Constants.Timeout))
+        return this.resolveData(this.request.get(this.address + this.endpoint + "/data/tag/" + tag).timeout(Constants.Timeout))
             .then((r: any) => r.map((m: any) => Message.deserialise(m)));
+    }
+
+    public getDataSince(tag: string, timestamp: string): Promise<Array<Message>> {
+        return this.resolveData(this.request.get(this.address + this.endpoint + "/data/tag/" + tag + "/" + timestamp).timeout(Constants.Timeout))
+            .then((r: any) => r.map((m: any) => Message.deserialise(m)));
+    }
+
+    public getMostRecentTimestamp(): Promise<Date>
+    {
+        return this.resolveData(this.request.get(this.address + this.endpoint + "/data/timestamp").timeout(Constants.Timeout));
     }
 
     public postData(incomingData: Message): Promise<void>
@@ -160,7 +170,7 @@ class RemoteChordPeer implements IPeer
         return this.resolveUnit(this.request.put(this.address + this.endpoint + "/data", JSON.stringify(incomingData)).timeout(Constants.Timeout));
     }
 
-    public deleteData(timestamp: Date): Promise<void>
+    public deleteData(timestamp: string): Promise<void>
     {
         return this.resolveUnit(this.request.delete(this.address + this.endpoint + "/data/" + timestamp).timeout(Constants.Timeout));
     }

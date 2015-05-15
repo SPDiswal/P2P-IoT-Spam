@@ -64,6 +64,24 @@ class SpanningTreeRouter implements IRouter
                     this.readMessage(data.message);
                     break;
 
+                case SpanningTreeMessages.MultipleMessages:
+                    var messages = data.map((m: any) => Message.deserialise(m));
+                    messages.forEach((m: Message) => this.readMessage(m));
+                    break;
+
+                case SpanningTreeMessages.PublishAgainExclusively:
+                    var subscription = Subscription.deserialise(data);
+                    var tags = subscription.tags;
+
+                    Q.all<Array<Message>>(tags.map(tag => this.retrieve(this.address, tag))).then(allMessages =>
+                    {
+                        var messages = ArrayUtilities.distinct(ArrayUtilities.flatten(allMessages));
+                        var filteredMessages = messages.filter(m => this.filter(subscription, m)).reverse();
+                        this.sendMultipleMessages(subscription.address, filteredMessages);
+                    });
+
+                    break;
+
                 case RouterMessages.Heartbeat:
                     this.repair();
                     break;
@@ -103,7 +121,13 @@ class SpanningTreeRouter implements IRouter
             {
                 // Inserts a new node into the spanning tree associated with this tag to participate in multicasting.
                 this.insert(root, tag)
-                    .then(node => this.nodes[tag] = node)
+                    .then(node =>
+                    {
+                        this.nodes[tag] = node;
+
+                        // Requests responsible peers to publish all previous messages again to this peer exclusively.
+                        if (retrieveOldMessages) this.publishAgainExclusively(root, subscription);
+                    })
                     .catch(() => deferred.reject("Failed to subscribe to " + subscription.id));
             });
         })).then(() =>
@@ -238,10 +262,15 @@ class SpanningTreeRouter implements IRouter
         }
     }
 
+    private filter(subscription: Subscription, message: Message)
+    {
+        return !ArrayUtilities.disjoint(subscription.tags, message.tags)
+            && this.filterEvaluator.evaluate(subscription.filter, message);
+    }
+
     private readMessage(message: Message)
     {
-        this.localSubscriptions.filter(s => !ArrayUtilities.disjoint(s.tags, message.tags)
-            && this.filterEvaluator.evaluate(s.filter, message)).forEach(s =>
+        this.localSubscriptions.filter(s => this.filter(s, message)).forEach(s =>
         {
             if (!this.recentMessages.hasOwnProperty(message.id))
                 this.recentMessages[message.id] = <Array<string>>[ ];
@@ -266,6 +295,11 @@ class SpanningTreeRouter implements IRouter
     private sendMessage(subscriber: Address, message: Message, tag: string): Promise<void>
     {
         return this.broker.send(subscriber, SpanningTreeMessages.Message, { message: message, tag: tag });
+    }
+
+    private sendMultipleMessages(subscriber: Address, messages: Array<Message>)
+    {
+        return this.broker.send(subscriber, SpanningTreeMessages.MultipleMessages, messages);
     }
 
     private insert(root: Address, tag: string): Promise<SpanningTreeNode>
@@ -400,6 +434,11 @@ class SpanningTreeRouter implements IRouter
     private setParent(peer: Address, tag: string, parent: Address): Promise<void>
     {
         return this.broker.send(peer, SpanningTreeMessages.SetParent, { tag: tag, address: parent });
+    }
+
+    private publishAgainExclusively(responsiblePeer: Address, subscription: Subscription)
+    {
+        return this.broker.send(responsiblePeer, SpanningTreeMessages.PublishAgainExclusively, subscription);
     }
 
     private ping(subscriber: Address)

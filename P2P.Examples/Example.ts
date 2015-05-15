@@ -41,6 +41,8 @@ class Example
 
         var jsonParser = BodyParser.json();
 
+        var temperature = 10;
+
         app.post("/join/:port", (req, res) =>
         {
             framework.join("127.0.0.1", parseInt(req.params.port));
@@ -50,7 +52,8 @@ class Example
         app.post("/publish", jsonParser, (req, res) =>
         {
             //            framework.publish(req.body.tags, req.body.contents);
-            framework.publish([ "weather" ], { description: "sunny", temperature: 10, precipitation: 0, wind: "mind-blowing" });
+            framework.publish(["weather"], { description: "sunny", temperature: temperature, precipitation: 0, wind: "mind-blowing" });
+            temperature++;
             res.sendStatus(StatusCode.NoContent);
         });
 
@@ -59,7 +62,7 @@ class Example
             res.sendStatus(StatusCode.NoContent);
             //            console.log("New subscription: " + framework.subscribe(req.body.tags, (tags: Array<string>, contents: any) => console.log("New message: " + tags + " " + contents)));
 
-            framework.subscribeToContents([ "weather" ], (tags, contents: any) => contents.temperature === 10, (tags, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents)))
+            framework.subscribeToContents([ "weather" ], (tags, contents: any) => contents.temperature >= 10, (tags, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents)), true)
                 .then(s => console.log("New subscription: " + s))
                 .catch(e => console.log(e));
         });

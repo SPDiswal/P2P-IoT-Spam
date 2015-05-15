@@ -44,6 +44,7 @@ class LocalChordPeer implements IPeer
     private fixSuccessorsInterval: any;
     private checkResponsibilitiesInterval: any;
     private checkReplicationsInterval: any;
+    private synchroniseDataInterval: any;
     private heartbeatInterval: any;
 
     private responsibilities: Array<Responsibility> = [ ];
@@ -160,11 +161,17 @@ class LocalChordPeer implements IPeer
         app.get(this.endpoint + "/data", (req, res) => this.respondWithOk(res,
             this.getAllData()));
 
-        app.get(this.endpoint + "/data/:tag", (req, res) => this.respondWithOk(res,
+        app.get(this.endpoint + "/data/timestamp/:timestamp", (req, res) => this.respondWithOk(res,
+            this.getAllDataSince(req.params.timestamp)));
+
+        app.get(this.endpoint + "/data/timestamp", (req, res) => this.respondWithOk(res,
+            this.getMostRecentTimestamp()));
+
+        app.get(this.endpoint + "/data/tag/:tag", (req, res) => this.respondWithOk(res,
             this.getData(req.params.tag)));
 
-        app.get(this.endpoint + "/data/:tag/:timestamp", (req, res) => this.respondWithOk(res,
-            this.getDataSince(req.params.tag, new Date(req.params.timestamp))));
+        app.get(this.endpoint + "/data/tag/:tag/:timestamp", (req, res) => this.respondWithOk(res,
+            this.getDataSince(req.params.tag, req.params.timestamp)));
 
         app.post(this.endpoint + "/data", jsonParser, (req, res) => this.respondWithNoContent(res,
             this.postData(req.body)));
@@ -173,7 +180,7 @@ class LocalChordPeer implements IPeer
             this.putData(req.body)));
 
         app.delete(this.endpoint + "/data/:timestamp", (req, res) => this.respondWithNoContent(res,
-            this.deleteData(new Date(req.params.timestamp))));
+            this.deleteData(req.params.timestamp)));
     }
 
     private respondWithNoContent(res: Response, promise: Promise<void>)
@@ -512,6 +519,28 @@ class LocalChordPeer implements IPeer
         return deferred.promise;
     }
 
+    public getAllDataSince(timestamp: string): Promise<Array<Message>>
+    {
+        var deferred = Q.defer<Array<any>>();
+
+        this.database.find({
+            $where()
+            {
+                return new Date(this._timestamp) >= new Date(timestamp);
+            }
+        }, (error: Error, rows: Array<any>) =>
+        {
+            deferred.resolve(rows.map((r: any) =>
+            {
+                var contents = r._contents;
+                contents.id = r._id;
+                return Message.deserialise(contents);
+            }));
+        });
+
+        return deferred.promise;
+    }
+
     public getData(tag: string): Promise<Array<Message>>
     {
         var deferred = Q.defer<Array<any>>();
@@ -531,14 +560,14 @@ class LocalChordPeer implements IPeer
         return deferred.promise;
     }
 
-    public getDataSince(tag: string, timestamp: Date): Promise<Array<Message>>
+    public getDataSince(tag: string, timestamp: string): Promise<Array<Message>>
     {
         var deferred = Q.defer<Array<any>>();
 
         this.database.find({
             $where()
             {
-                return ArrayUtilities.contains(this._contents.tags, tag) && this._timestamp >= timestamp;
+                return ArrayUtilities.contains(this._contents.tags, tag) && new Date(this._timestamp) >= new Date(timestamp);
             }
         }, (error: Error, rows: Array<any>) => deferred.resolve(rows.map((r: any) =>
         {
@@ -546,6 +575,19 @@ class LocalChordPeer implements IPeer
             contents.id = r._id;
             return Message.deserialise(contents);
         })));
+
+        return deferred.promise;
+    }
+
+    public getMostRecentTimestamp(): Promise<Date>
+    {
+        var deferred = Q.defer<Date>();
+
+        this.database.find({ }).sort({ _timestamp: -1 }).limit(1).exec((error: Error, rows: Array<any>) =>
+        {
+            if (rows && rows.length === 1) deferred.resolve(rows[0]._timestamp);
+            else deferred.resolve(new Date(0));
+        });
 
         return deferred.promise;
     }
@@ -573,9 +615,14 @@ class LocalChordPeer implements IPeer
         return Helpers.resolvedUnit();
     }
 
-    public deleteData(timestamp: Date): Promise<void>
+    public deleteData(timestamp: string): Promise<void>
     {
-        this.database.remove({ _timestamp: { $lt: timestamp } }, { multi: true });
+        this.database.remove({
+            $where()
+            {
+                return new Date(this._timestamp) < new Date(timestamp);
+            }
+        }, { multi: true });
         return Helpers.resolvedUnit();
     }
 
@@ -723,6 +770,44 @@ class LocalChordPeer implements IPeer
         }
     }
 
+    private synchroniseData()
+    {
+        this.pull();
+        this.push();
+    }
+
+    private pull()
+    {
+        this.getMostRecentTimestamp().then(timestamp =>
+        {
+            for (var j = 0; j < this.successors.length; j++)
+            {
+                if (this.successors[j].address !== this.address)
+                {
+                    this.successors[j].getAllDataSince(timestamp.toString())
+                        .then(messages => messages.forEach(m => this.putData(m)));
+                }
+            }
+        });
+    }
+
+    private push()
+    {
+        for (var i = 0; i < this.successors.length; i++)
+        {
+            ((s: IPeer) =>
+            {
+                if (s.address !== this.address)
+                {
+                    s.getMostRecentTimestamp().then(timestamp =>
+                    {
+                        this.getAllDataSince(timestamp.toString()).then(messages => messages.forEach(m => s.putData(m)));
+                    });
+                }
+            })(this.successors[i]);
+        }
+    }
+
     private sendHeartbeat()
     {
         this.broker.delegate(RouterMessages.Heartbeat, null);
@@ -757,6 +842,7 @@ class LocalChordPeer implements IPeer
         clearInterval(this.fixSuccessorsInterval);
         clearInterval(this.checkResponsibilitiesInterval);
         clearInterval(this.checkReplicationsInterval);
+        clearInterval(this.synchroniseDataInterval);
         clearInterval(this.heartbeatInterval);
     }
 
@@ -765,7 +851,7 @@ class LocalChordPeer implements IPeer
         this.log("Chord peer running at " + this.address + "\n");
         this.resetToSinglePeer(this.address);
 
-        var numberOfIntervals = 7;
+        var numberOfIntervals = 8;
 
         setTimeout(() => this.stabiliseInterval = setInterval(() => this.stabilise(), Constants.StabiliseInterval), 0 * Constants.StabiliseInterval / numberOfIntervals);
         setTimeout(() => this.checkPredecessorInterval = setInterval(() => this.checkPredecessor(), Constants.StabiliseInterval), 1 * Constants.StabiliseInterval / numberOfIntervals);
@@ -773,7 +859,8 @@ class LocalChordPeer implements IPeer
         setTimeout(() => this.fixSuccessorsInterval = setInterval(() => this.fixSuccessors(), Constants.StabiliseInterval), 3 * Constants.StabiliseInterval / numberOfIntervals);
         setTimeout(() => this.checkResponsibilitiesInterval = setInterval(() => this.checkResponsibilities(), Constants.StabiliseInterval), 4 * Constants.StabiliseInterval / numberOfIntervals);
         setTimeout(() => this.checkReplicationsInterval = setInterval(() => this.checkReplications(), Constants.StabiliseInterval), 5 * Constants.StabiliseInterval / numberOfIntervals);
-        setTimeout(() => this.heartbeatInterval = setInterval(() => this.sendHeartbeat(), Constants.StabiliseInterval), 6 * Constants.StabiliseInterval / numberOfIntervals);
+        setTimeout(() => this.synchroniseDataInterval = setInterval(() => this.synchroniseData(), Constants.StabiliseInterval), 6 * Constants.StabiliseInterval / numberOfIntervals);
+        setTimeout(() => this.heartbeatInterval = setInterval(() => this.sendHeartbeat(), Constants.StabiliseInterval), 7 * Constants.StabiliseInterval / numberOfIntervals);
     }
 }
 

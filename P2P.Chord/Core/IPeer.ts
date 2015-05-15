@@ -49,15 +49,19 @@ interface IPeer
 
     getAllData(): Promise<Array<Message>>;
 
+    getAllDataSince(timestamp: string): Promise<Array<Message>>;
+
     getData(tag: string): Promise<Array<Message>>;
 
-    getDataSince(tag: string, timestamp: Date): Promise<Array<Message>>;
+    getDataSince(tag: string, timestamp: string): Promise<Array<Message>>;
+
+    getMostRecentTimestamp(): Promise<Date>;
 
     postData(incomingData: Message): Promise<void>;
 
     putData(incomingData: Message): Promise<void>;
 
-    deleteData(timestamp: Date): Promise<void>;
+    deleteData(timestamp: string): Promise<void>;
 }
 
 export = IPeer

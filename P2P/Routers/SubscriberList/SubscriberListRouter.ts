@@ -54,7 +54,8 @@ class SubscriberListRouter implements IRouter
                     break;
 
                 case SubscriberListMessages.MultipleMessages:
-                    // TODO Read each message.
+                    var messages = data.map((m: any) => Message.deserialise(m));
+                    messages.forEach((m: Message) => this.readMessage(m));
                     break;
 
                 case SubscriberListMessages.AddSubscription:
@@ -66,7 +67,16 @@ class SubscriberListRouter implements IRouter
                     break;
 
                 case SubscriberListMessages.PublishAgainExclusively:
-                    // TODO Call getData/:tag, construct array of messages, send MultipleMessages.
+                    var subscription = Subscription.deserialise(data);
+                    var tags = subscription.tags;
+
+                    Q.all<Array<Message>>(tags.map(tag => this.retrieve(this.address, tag))).then(allMessages =>
+                    {
+                        var messages = ArrayUtilities.distinct(ArrayUtilities.flatten(allMessages));
+                        var filteredMessages = messages.filter(m => this.filter(subscription, m)).reverse();
+                        this.sendMultipleMessages(subscription.address, filteredMessages);
+                    });
+
                     break;
             }
 
@@ -233,9 +243,6 @@ class SubscriberListRouter implements IRouter
                     // Removes subscriptions from failed peers.
                     var liveSubscriptions = results.filter(q => q.state === "fulfilled").map(q => <Subscription>q.value);
                     var failedSubscriptions = ArrayUtilities.except(allSubscriptions, liveSubscriptions);
-
-                    console.log(failedSubscriptions);
-
                     failedSubscriptions.forEach(deadSubscription => this.removeSubscription(this.address, deadSubscription));
                 });
             }
@@ -258,6 +265,11 @@ class SubscriberListRouter implements IRouter
     private sendMessage(subscriber: Address, message: Message)
     {
         return this.broker.send(subscriber, SubscriberListMessages.Message, message);
+    }
+
+    private sendMultipleMessages(subscriber: Address, messages: Array<Message>)
+    {
+        return this.broker.send(subscriber, SubscriberListMessages.MultipleMessages, messages);
     }
 
     private addSubscription(responsiblePeer: Address, subscription: Subscription)

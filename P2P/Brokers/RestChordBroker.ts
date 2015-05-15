@@ -49,13 +49,13 @@ class RestChordBroker implements IBroker
                 return this.resolveOnNoContent(this.request.delete(destination.toString() + "/responsibilities/" + data));
 
             case RouterMessages.Retrieve:
-                return this.resolveOnSuccess(this.request.get(destination.toString() + "/data/" + data));
+                return this.resolveOnSuccess(this.request.get(destination.toString() + "/data/tag/" + data));
 
             case RouterMessages.RetrieveSince:
-                return this.resolveOnSuccess(this.request.get(destination.toString() + "/data/" + data.identifier + "/" + data.timestamp));
+                return this.resolveOnSuccess(this.request.get(destination.toString() + "/data/tag/" + data.identifier + "/" + data.timestamp));
 
             case RouterMessages.Persist:
-                return this.resolveOnNoContent(this.request.put(destination.toString() + "/data", JSON.stringify(data)));
+                return this.resolveOnNoContent(this.request.post(destination.toString() + "/data", JSON.stringify(data)));
 
             case RouterMessages.Sweep:
                 return this.resolveOnNoContent(this.request.delete(destination.toString() + "/data/" + data));
