@@ -19,11 +19,16 @@ class Message
 
     public static deserialise(input: any): Message
     {
-        var message = new Message(null, new Array<string>());
-        message.id = input.id;
-        message.contents = input.contents;
-        message.tags = input.tags;
-        return message;
+        if (input)
+        {
+            var message = new Message(null, new Array<string>());
+            message.id = input.id;
+            message.contents = input.contents;
+            message.tags = input.tags;
+            return message;
+        }
+
+        return null;
     }
 }
 

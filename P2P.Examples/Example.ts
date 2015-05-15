@@ -4,6 +4,8 @@ import File = require("fs");
 
 import Framework = require("../P2P/Core/Framework");
 import StatusCode = require("../P2P/Http/StatusCode");
+import Evaluator = require("../P2P/Filters/FilterEvaluator");
+import Message1 = require("../P2P/Common/Message");
 
 class Example
 {
@@ -57,7 +59,7 @@ class Example
             res.sendStatus(StatusCode.NoContent);
             //            console.log("New subscription: " + framework.subscribe(req.body.tags, (tags: Array<string>, contents: any) => console.log("New message: " + tags + " " + contents)));
 
-            framework.subscribe([ "weather" ], (tags: Array<string>, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents)))
+            framework.subscribeToContents([ "weather" ], (tags, contents: any) => contents.temperature === 10, (tags, contents: any) => console.log("New message: " + JSON.stringify(tags) + " " + JSON.stringify(contents)))
                 .then(s => console.log("New subscription: " + s))
                 .catch(e => console.log(e));
         });

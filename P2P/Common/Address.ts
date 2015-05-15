@@ -31,10 +31,15 @@
 
     public static deserialise(input: any): Address
     {
-        var address = new Address();
-        address.host = input.host;
-        address.port = input.port;
-        return address;
+        if (input)
+        {
+            var address = new Address();
+            address.host = input.host;
+            address.port = input.port;
+            return address;
+        }
+
+        return null;
     }
 }
 

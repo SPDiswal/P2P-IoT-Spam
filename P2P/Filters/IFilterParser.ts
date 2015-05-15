@@ -1,8 +1,6 @@
-﻿import Filter = require("./Filter");
-
-interface IFilterParser
+﻿interface IFilterParser
 {
-    parse(filterExpression: string): Filter;
+    parse(filter: (contents: any, tags: Array<string>) => boolean): string;
 }
 
 export = IFilterParser;

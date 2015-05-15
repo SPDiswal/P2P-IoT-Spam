@@ -40,6 +40,21 @@ class Helpers
         deferred.resolve((void 0));
         return deferred.promise;
     }
+
+    // Borrowed from http://stackoverflow.com/a/17238793
+    public static promiseWhile(condition: () => boolean, body: () => Promise<any>): Promise<void>
+    {
+        var deferred = Q.defer<void>();
+
+        function loop()
+        {
+            if (!condition()) deferred.resolve((void 0));
+            else Q.when(body(), loop, deferred.reject);
+        }
+
+        Q.nextTick(loop);
+        return deferred.promise;
+    }
 }
 
 export = Helpers;

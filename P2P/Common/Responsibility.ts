@@ -6,10 +6,15 @@
 
     public static deserialise(input: any): Responsibility
     {
-        var responsibility = new Responsibility(null, null);
-        responsibility.identifier = input.identifier;
-        responsibility.data = input.data;
-        return responsibility;
+        if (input)
+        {
+            var responsibility = new Responsibility(null, null);
+            responsibility.identifier = input.identifier;
+            responsibility.data = input.data;
+            return responsibility;            
+        }
+
+        return null;
     }
 }
 

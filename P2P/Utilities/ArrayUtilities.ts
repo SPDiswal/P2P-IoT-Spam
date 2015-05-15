@@ -1,5 +1,10 @@
 ﻿class ArrayUtilities
 {
+    public static nonNull<T>(array: Array<T>): Array<T>
+    {
+        return array.filter(value => !!value);
+    }
+
     public static distinct<T>(array: Array<T>): Array<T>
     {
         return array.filter((value, index) => ArrayUtilities.indexOfWithEquals(array, value) === index);

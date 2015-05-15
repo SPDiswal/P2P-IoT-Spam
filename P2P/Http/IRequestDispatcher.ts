@@ -3,12 +3,8 @@ import Promise = Q.Promise;
 
 import IResponse = require("./IResponse");
 
-import HttpMethod = require("./HttpMethod");
-
 interface IRequestDispatcher
 {
-    send(method: HttpMethod, url: string, data?: string): Promise<IResponse>;
-
     "delete"(url: string, data?: string): Promise<IResponse>;
 
     "get"(url: string, data?: string): Promise<IResponse>;

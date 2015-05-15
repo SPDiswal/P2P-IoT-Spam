@@ -2,14 +2,13 @@
 import Promise = Q.Promise;
 
 import Address = require("../Common/Address");
-import HttpMethod = require("../Http/HttpMethod");
 
 interface IBroker
 {
     // Outgoing messages from router to low-level network (e.g. Chord peer) via IBroker.
     // Called by router, may expect return value from broker (delivered by low-level network).
     // Remember to hash before lookup.
-    send(destination: Address, method: HttpMethod, message: string, data: any): Promise<any>;
+    send(destination: Address, message: string, data: any): Promise<any>;
 
     // For example:
     // .send(self address, "lookup", "tag") -> address of responsible peer

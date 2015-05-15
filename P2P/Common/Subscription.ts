@@ -25,12 +25,17 @@ class Subscription
 
     public static deserialise(input: any): Subscription
     {
-        var subscription = new Subscription(null, new Array<string>(), null, null);
-        subscription.id = input.id;
-        subscription.address = Address.deserialise(input.address);
-        subscription.tags = input.tags;
-        subscription.filter = input.filter;
-        return subscription;
+        if (input)
+        {
+            var subscription = new Subscription(null, new Array<string>(), null, null);
+            subscription.id = input.id;
+            subscription.address = Address.deserialise(input.address);
+            subscription.tags = input.tags;
+            subscription.filter = input.filter;
+            return subscription;
+        }
+
+        return null;
     }
 }
 

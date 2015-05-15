@@ -106,11 +106,11 @@
     {
         $.get("http://{{ selfAddr }}/predecessor", function (data)
         {
-            if (data.peer != null)
+            if (data != null)
             {
-                $("#predecessorAddress").html("<a href=\"http://" + data.peer + "\">" + data.peer + "</a>");
-                $("#predecessorHash").text(hash(data.peer));
-                $("#predecessorChevron").html("<a href=\"http://" + data.peer + "\"><span class=\"glyphicon glyphicon-chevron-left\"></span></a>");
+                $("#predecessorAddress").html("<a href=\"http://" + data + "\">" + data + "</a>");
+                $("#predecessorHash").text(hash(data));
+                $("#predecessorChevron").html("<a href=\"http://" + data + "\"><span class=\"glyphicon glyphicon-chevron-left\"></span></a>");
             }
             else
             {
@@ -125,9 +125,9 @@
     {
         $.get("http://{{ selfAddr }}/successor", function (data)
         {
-            $("#successorAddress").html("<a href=\"http://" + data.peer + "\">" + data.peer + "</a>");
-            $("#successorHash").text(hash(data.peer));
-            $("#successorChevron").html("<a href=\"http://" + data.peer + "\"><span class=\"glyphicon glyphicon-chevron-right\"></span></a>");
+            $("#successorAddress").html("<a href=\"http://" + data + "\">" + data + "</a>");
+            $("#successorHash").text(hash(data));
+            $("#successorChevron").html("<a href=\"http://" + data + "\"><span class=\"glyphicon glyphicon-chevron-right\"></span></a>");
         });
     }
 
@@ -281,7 +281,7 @@
                 $.get("http://{{ selfAddr }}/lookup/" + hash(value), function (data)
                 {
                     $("#lookupResultLeft").html(hash(value));
-                    $("#lookupResultRight").html("<a href=\"http://" + data.peer + "\">" + data.peer + "</a> (hash: " + hash(data.peer) + ")");
+                    $("#lookupResultRight").html("<a href=\"http://" + data + "\">" + data + "</a> (hash: " + hash(data) + ")");
                 });
             }
             else
@@ -299,7 +299,7 @@
             {
                 $.get("http://{{ selfAddr }}/lookup/" + hash(value), function (data)
                 {
-                    $("#addResourceId").html(hash(value) + " in " + data.peer);
+                    $("#addResourceId").html(hash(value) + " in " + data);
                 });
             }
             else

@@ -1,12 +1,10 @@
 ﻿import IFilterParser = require("./IFilterParser");
 
-import Filter = require("./Filter");
-
 class FilterParser implements IFilterParser
 {
-    public parse(filterExpression: string): Filter
+    public parse(filter: (contents: any, tags: Array<string>) => boolean): string
     {
-        return new Filter();
+        return filter.toString();
     }
 }
 

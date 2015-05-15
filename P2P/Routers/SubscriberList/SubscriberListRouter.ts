@@ -7,7 +7,6 @@ import IRouter = require("../IRouter");
 
 import Address = require("../../Common/Address");
 import ArrayUtilities = require("../../Utilities/ArrayUtilities");
-import HttpMethod = require("../../Http/HttpMethod");
 import Message = require("../../Common/Message");
 import Responsibility = require("../../Common/Responsibility");
 import RouterMessages = require("../RouterMessages");
@@ -18,6 +17,8 @@ class SubscriberListRouter implements IRouter
 {
     private recentMessages: any = { };
     private localSubscriptions: Array<Subscription> = [ ];
+
+    // TODO Ensure (in heartbeat) that all local subscriptions are registered properly at the responsible peers.
 
     constructor(private address: Address, private broker: IBroker, private filterEvaluator: IFilterEvaluator)
     {
@@ -86,13 +87,13 @@ class SubscriberListRouter implements IRouter
             //
         })).then(s =>
         {
-            // TODO Store message in database.
-
             var subscribers = ArrayUtilities.distinct(ArrayUtilities.flatten(s));
 
             // Sends the message to each subscriber.
             Q.allSettled(subscribers.map(subscriber => this.sendMessage(subscriber.address, message)))
                 .then(() => deferred.resolve(true));
+
+            this.persist(this.address, message);
             //
         }).catch(() => deferred.reject("Failed to publish message " + message.id));
 
@@ -155,7 +156,7 @@ class SubscriberListRouter implements IRouter
     {
         var deferred = Q.defer<boolean>();
 
-        this.broker.send(this.address, HttpMethod.Post, RouterMessages.Join, domain)
+        this.broker.send(this.address, RouterMessages.Join, domain)
             .then(() => deferred.resolve(true))
             .catch(() => deferred.reject("Failed to join the network"));
 
@@ -244,66 +245,86 @@ class SubscriberListRouter implements IRouter
     // HELPERS: Broker
     private lookup(tag: string): Promise<Address>
     {
-        return this.broker.send(this.address, HttpMethod.Get, RouterMessages.Lookup, tag)
+        return this.broker.send(this.address, RouterMessages.Lookup, tag)
             .then((a: any) => Address.deserialise(a));
     }
 
     private getSubscriberList(responsiblePeer: Address, message: Message): Promise<Array<Subscription>>
     {
-        return this.broker.send(responsiblePeer, HttpMethod.Get, SubscriberListMessages.GetSubscriberList, message)
+        return this.broker.send(responsiblePeer, SubscriberListMessages.GetSubscriberList, message)
             .then((r: any) => r.map((s: any) => Subscription.deserialise(s)));
     }
 
     private sendMessage(subscriber: Address, message: Message)
     {
-        return this.broker.send(subscriber, HttpMethod.Post, SubscriberListMessages.Message, message);
+        return this.broker.send(subscriber, SubscriberListMessages.Message, message);
     }
 
     private addSubscription(responsiblePeer: Address, subscription: Subscription)
     {
-        return this.broker.send(responsiblePeer, HttpMethod.Put, SubscriberListMessages.AddSubscription, subscription);
+        return this.broker.send(responsiblePeer, SubscriberListMessages.AddSubscription, subscription);
     }
 
     private removeSubscription(responsiblePeer: Address, subscription: Subscription)
     {
-        return this.broker.send(responsiblePeer, HttpMethod.Delete, SubscriberListMessages.RemoveSubscription, subscription);
+        return this.broker.send(responsiblePeer, SubscriberListMessages.RemoveSubscription, subscription);
     }
 
     private publishAgainExclusively(responsiblePeer: Address, subscription: Subscription)
     {
-        return this.broker.send(responsiblePeer, HttpMethod.Post, SubscriberListMessages.PublishAgainExclusively, subscription);
+        return this.broker.send(responsiblePeer, SubscriberListMessages.PublishAgainExclusively, subscription);
     }
 
     private ping(subscriber: Address)
     {
-        return this.broker.send(subscriber, HttpMethod.Get, RouterMessages.Ping, "");
+        return this.broker.send(subscriber, RouterMessages.Ping, "");
     }
 
     private getResponsibility(responsiblePeer: Address, tag: string): Promise<Responsibility>
     {
-        return this.broker.send(responsiblePeer, HttpMethod.Get, RouterMessages.GetResponsibility, tag)
+        return this.broker.send(responsiblePeer, RouterMessages.GetResponsibility, tag)
             .then((r: any) => new Responsibility(r.identifier, r.data.map((s: any) => Subscription.deserialise(s))));
     }
 
     private getAllResponsibilities(responsiblePeer: Address): Promise<Array<Responsibility>>
     {
-        return this.broker.send(responsiblePeer, HttpMethod.Get, RouterMessages.GetAllResponsibilities, null)
+        return this.broker.send(responsiblePeer, RouterMessages.GetAllResponsibilities, null)
             .then((r: any) => r.map((t: any) => new Responsibility(t.identifier, t.data.map((s: any) => Subscription.deserialise(s)))));
     }
 
     private postResponsibility(responsiblePeer: Address, responsibility: Responsibility): Promise<void>
     {
-        return this.broker.send(responsiblePeer, HttpMethod.Put, RouterMessages.PostResponsibility, responsibility);
+        return this.broker.send(responsiblePeer, RouterMessages.PostResponsibility, responsibility);
     }
 
     private putResponsibility(responsiblePeer: Address, responsibility: Responsibility): Promise<void>
     {
-        return this.broker.send(responsiblePeer, HttpMethod.Put, RouterMessages.PutResponsibility, responsibility);
+        return this.broker.send(responsiblePeer, RouterMessages.PutResponsibility, responsibility);
     }
 
     private deleteResponsibility(responsiblePeer: Address, tag: string): Promise<void>
     {
-        return this.broker.send(responsiblePeer, HttpMethod.Delete, RouterMessages.DeleteResponsibility, tag);
+        return this.broker.send(responsiblePeer, RouterMessages.DeleteResponsibility, tag);
+    }
+
+    private retrieve(responsiblePeer: Address, tag: string): Promise<Array<Message>>
+    {
+        return this.broker.send(responsiblePeer, RouterMessages.Retrieve, tag);
+    }
+
+    private retrieveSince(responsiblePeer: Address, tag: string, timestamp: Date): Promise<Array<Message>>
+    {
+        return this.broker.send(responsiblePeer, RouterMessages.Retrieve, { identifier: tag, timestamp: timestamp });
+    }
+
+    private persist(responsiblePeer: Address, message: Message): Promise<void>
+    {
+        return this.broker.send(responsiblePeer, RouterMessages.Persist, message);
+    }
+
+    private sweep(responsiblePeer: Address, timestamp: Date): Promise<void>
+    {
+        return this.broker.send(responsiblePeer, RouterMessages.Sweep, timestamp);
     }
 }
 

@@ -7,7 +7,6 @@ import IResponse = require("../Http/IResponse");
 
 import Address = require("../Common/Address");
 import Helpers = require("../Utilities/Helpers");
-import HttpMethod = require("../Http/HttpMethod");
 import RouterMessages = require("../Routers/RouterMessages");
 import StatusCode = require("../Http/StatusCode");
 
@@ -21,7 +20,7 @@ class RestChordBroker implements IBroker
     {
     }
 
-    public send(destination: Address, method: HttpMethod, message: string, data: any): Promise<any>
+    public send(destination: Address, message: string, data: any): Promise<any>
     {
         switch (message)
         {
@@ -32,7 +31,7 @@ class RestChordBroker implements IBroker
                 return this.resolveOnNoContent(this.request.post(destination.toString() + "/join/" + (<Address>data).toString()));
 
             case RouterMessages.Lookup:
-                return this.resolveToAddressOnOk(this.request.get(destination.toString() + "/lookup/" + Helpers.hash(<string>data)));
+                return this.resolveOnSuccess(this.request.get(destination.toString() + "/lookup/" + Helpers.hash(<string>data))).then((p: string) => Address.from(p));
 
             case RouterMessages.GetResponsibility:
                 return this.resolveOnSuccess(this.request.get(destination.toString() + "/responsibilities/" + data));
@@ -62,7 +61,7 @@ class RestChordBroker implements IBroker
                 return this.resolveOnNoContent(this.request.delete(destination.toString() + "/data/" + data));
 
             default:
-                return this.resolveOnSuccess(this.request.send(method, destination.toString() + "/action/" + message, JSON.stringify(data)));
+                return this.resolveOnSuccess(this.request.post(destination.toString() + "/action/" + message, JSON.stringify(data)));
         }
     }
 
@@ -102,19 +101,19 @@ class RestChordBroker implements IBroker
         return deferred.promise;
     }
 
-    private resolveToAddressOnOk(promise: Promise<IResponse>): Promise<Address>
-    {
-        var deferred = Q.defer<Address>();
-
-        promise.then(r =>
-        {
-            if (r.statusCode === StatusCode.Ok) deferred.resolve(Address.from(<string>r.response.peer));
-            else deferred.reject((void 0));
-            //
-        }).catch(() => deferred.reject((void 0)));
-
-        return deferred.promise;
-    }
+//    private resolveToAddressOnOk(promise: Promise<IResponse>): Promise<Address>
+//    {
+//        var deferred = Q.defer<Address>();
+//
+//        promise.then(r =>
+//        {
+//            if (r.statusCode === StatusCode.Ok) deferred.resolve(Address.from(<string>r.response));
+//            else deferred.reject((void 0));
+//            //
+//        }).catch(() => deferred.reject((void 0)));
+//
+//        return deferred.promise;
+//    }
 
     private resolveOnSuccess(promise: Promise<IResponse>): Promise<any>
     {

@@ -7,7 +7,6 @@ import IRouter = require("../IRouter");
 
 import Address = require("../../Common/Address");
 import ArrayUtilities = require("../../Utilities/ArrayUtilities");
-import HttpMethod = require("../../Http/HttpMethod");
 import Message = require("../../Common/Message");
 import RouterMessages = require("../RouterMessages");
 import Subscription = require("../../Common/Subscription");
@@ -21,6 +20,8 @@ class SpanningTreeRouter implements IRouter
     private localSubscriptions: Array<Subscription> = [ ];
     private nodes: any = { };
 
+    // TODO Ensure (in heartbeat) that all local subscriptions are registered properly by nodes in spanning trees.
+
     constructor(private address: Address, private broker: IBroker, private filterEvaluator: IFilterEvaluator)
     {
         this.broker.incoming((message: string, data: any): Promise<any> =>
@@ -30,33 +31,30 @@ class SpanningTreeRouter implements IRouter
             switch (message)
             {
                 case SpanningTreeMessages.GetNode:
-                    data.tag = "weather"; // TODO Remove this.
-
                     if (!this.nodes[data.tag])
-                        this.nodes[data.tag] = new SpanningTreeNode(this.address /*, data.tag*/);
+                        this.nodes[data.tag] = new SpanningTreeNode(this.address);
 
                     deferred.resolve(this.nodes[data.tag]);
                     return deferred.promise;
 
                 case SpanningTreeMessages.SetLeft:
-                    data.tag = "weather"; // TODO Remove this.
-
-                    this.nodes[data.tag].left = Address.deserialise(data.address);
+                    if (data.address) this.nodes[data.tag].left = Address.deserialise(data.address);
+                    else delete this.nodes[data.tag]["left"];
                     break;
 
                 case SpanningTreeMessages.SetRight:
-                    data.tag = "weather"; // TODO Remove this.
-
-                    this.nodes[data.tag].right = Address.deserialise(data.address);
+                    if (data.address) this.nodes[data.tag].right = Address.deserialise(data.address);
+                    else delete this.nodes[data.tag]["right"];
                     break;
 
                 case SpanningTreeMessages.SetParent:
-                    data.tag = "weather"; // TODO Remove this.
-
-                    this.nodes[data.tag].parent = Address.deserialise(data.address);
+                    if (data.address) this.nodes[data.tag].parent = Address.deserialise(data.address);
+                    else delete this.nodes[data.tag]["parent"];
                     break;
 
                 case SpanningTreeMessages.Message:
+                    if (!this.nodes[data.tag]) this.nodes[data.tag] = new SpanningTreeNode(this.address);
+
                     var left = this.nodes[data.tag].left;
                     var right = this.nodes[data.tag].right;
 
@@ -85,7 +83,11 @@ class SpanningTreeRouter implements IRouter
             // Looks up the responsible peers of each message tag and sends the message to them.
             return this.lookup(tag).then(responsiblePeer => this.sendMessage(responsiblePeer, message, tag));
             //
-        })).catch(() => deferred.reject("Failed to publish message " + message.id));
+        })).then(() =>
+        {
+            this.persist(this.address, message);
+            //
+        }).catch(() => deferred.reject("Failed to publish message " + message.id));
 
         return deferred.promise;
     }
@@ -99,6 +101,7 @@ class SpanningTreeRouter implements IRouter
             // Looks up the responsible peers of each subscription tag.
             return this.lookup(tag).then(root =>
             {
+                // Inserts a new node into the spanning tree associated with this tag to participate in multicasting.
                 this.insert(root, tag)
                     .then(node => this.nodes[tag] = node)
                     .catch(() => deferred.reject("Failed to subscribe to " + subscription.id));
@@ -107,6 +110,7 @@ class SpanningTreeRouter implements IRouter
         {
             this.localSubscriptions = this.localSubscriptions.filter(s => s.id !== subscription.id).concat([ subscription ]);
             deferred.resolve(true);
+            //
         }).catch(() => deferred.reject("Failed to subscribe to " + subscription.id));
 
         return deferred.promise;
@@ -123,19 +127,20 @@ class SpanningTreeRouter implements IRouter
             {
                 var otherSubscriptions = ArrayUtilities.except(this.localSubscriptions, [ subscription ]);
 
+                // Checks if there are other subscriptions of this tag that depend on being member of the spanning tree.
                 if (!ArrayUtilities.contains(ArrayUtilities.flatten(otherSubscriptions.map(s => s.tags)), tag))
                 {
-                    this.delete(tag).then(() =>
-                    {
-                        if ((this.nodes[tag]).parent) this.nodes[tag] = null;
-                    });
+                    // If not, then remove node from the spanning tree unless it is the root (i.e. rendezvous point/responsible peer).
+                    this.delete(tag).then(() => { if (this.nodes[tag].parent) this.nodes[tag] = null; });
                 }
 
                 return Helpers.resolvedUnit();
+                //
             })).then(() =>
             {
                 this.localSubscriptions = this.localSubscriptions.filter(s => s.id !== subscription.id);
                 deferred.resolve(true);
+                //
             }).catch(() => deferred.reject("Failed to unsubscribe from " + id));
         }
         else
@@ -148,52 +153,70 @@ class SpanningTreeRouter implements IRouter
     {
         var deferred = Q.defer<boolean>();
 
-        this.broker.send(this.address, HttpMethod.Post, RouterMessages.Join, domain)
+        this.broker.send(this.address, RouterMessages.Join, domain)
             .then(() => deferred.resolve(true))
             .catch(() => deferred.reject("Failed to join the network"));
 
-
+        // TODO Fix spanning tree when re-joining.
 
         return deferred.promise;
     }
 
     private repair()
     {
-        for (var t in this.nodes)
+        for (var tag in this.nodes)
         {
-            if (this.nodes.hasOwnProperty(t))
+            if (this.nodes.hasOwnProperty(tag))
             {
-                ((tag: string) =>
+                var node = <SpanningTreeNode>this.nodes[tag];
+
+                if (node)
                 {
-                    if ((<SpanningTreeNode>this.nodes[tag]).parent)
-                    {
-                        this.ping(<Address>(this.nodes[tag].parent)).then(() => { }).catch(() =>
-                        {
-                            var left = this.nodes[tag].left;
-                            var right = this.nodes[tag].right;
-                            this.nodes[tag] = null;
-
-                            console.log("PARENT HAS FAILED");
-
-                            this.lookup(tag).then(root => this.insert(root, tag).then(node =>
-                            {
-                                node.left = left;
-                                node.right = right;
-
-                                console.log("FIXED " + JSON.stringify(root));
-
-                                this.nodes[tag] = node;
-                            }));
-                        });
-                    }
-
-                    if ((<SpanningTreeNode>this.nodes[tag]).left)
-                        this.ping(<Address>(this.nodes[tag].left)).then(() => { }).catch(() => this.nodes[tag].left = null);
-
-                    if ((<SpanningTreeNode>this.nodes[tag]).right)
-                        this.ping(<Address>(this.nodes[tag].right)).then(() => { }).catch(() => this.nodes[tag].right = null);
-                })(t);
+                    this.repairChildLinks(node, tag);
+                    this.repairParentLink(node, tag);
+                }
             }
+        }
+    }
+
+    private repairChildLinks(node: SpanningTreeNode, tag: string)
+    {
+        if (node.left) this.ping(node.left).catch(() => delete this.nodes[tag]["left"]);
+        if (node.right) this.ping(node.right).catch(() => delete this.nodes[tag]["right"]);
+    }
+
+    private repairParentLink(node: SpanningTreeNode, tag: string)
+    {
+        if (node.parent)
+        {
+            this.ping((node.parent)).then(() =>
+            {
+                // TODO Fix spanning tree when ancestor (parent, grand-parent etc.) fails and this peer (child, grand-child etc.) becomes new responsible peer/root. Needs to break bonds with current parent to become root.
+
+                // BUG Four nodes 80-83, all joined and subscribing. Manually crash 80, then 83. 82 then either crashes by itself (due to some variable being undefined) or link between 81 and 82 is broken.
+
+                this.lookup(tag).then(root =>
+                {
+                    if (root.equals(this.address))
+                    {
+                        this.setLeft(node.parent, tag, null);
+                        delete this.nodes[tag]["parent"];
+                    }
+                });
+            }).catch(() =>
+            {
+                // Parent node has failed, rejoins the spanning tree.
+                var left = node.left;
+                var right = node.right;
+                this.nodes[tag] = new SpanningTreeNode(this.address);
+
+                this.lookup(tag).then(root => this.insert(root, tag).then(n =>
+                {
+                    n.left = left;
+                    n.right = right;
+                    this.nodes[tag] = n;
+                }));
+            });
         }
     }
 
@@ -218,34 +241,27 @@ class SpanningTreeRouter implements IRouter
     // HELPERS: Broker
     private lookup(tag: string): Promise<Address>
     {
-        return this.broker.send(this.address, HttpMethod.Get, RouterMessages.Lookup, tag)
+        return this.broker.send(this.address, RouterMessages.Lookup, tag)
             .then((a: any) => Address.deserialise(a));
     }
 
     private sendMessage(subscriber: Address, message: Message, tag: string): Promise<void>
     {
-        return this.broker.send(subscriber, HttpMethod.Post, SpanningTreeMessages.Message, { message: message, tag: tag })
-            .then(() => console.log("SENT TO " + subscriber.toString()))
-            .catch(() => console.log("FAILED TO SEND TO " + subscriber.toString()));
+        return this.broker.send(subscriber, SpanningTreeMessages.Message, { message: message, tag: tag });
     }
 
     private insert(root: Address, tag: string): Promise<SpanningTreeNode>
     {
         var deferred = Q.defer<SpanningTreeNode>();
 
-        console.log("ROOT IS " + JSON.stringify(root));
-
         this.getNode(root, tag).then(n =>
         {
             var alreadyInTree = false;
             var x = n;
-            //            console.log("SET X TO " + JSON.stringify(x));
             var y: SpanningTreeNode = null;
-
             var z = new SpanningTreeNode(this.address /*, tag*/);
-            //            z.subscription = subscription;
 
-            this.promiseWhile(() => !!x, () =>
+            Helpers.promiseWhile(() => !!x, () =>
             {
                 if (this.address.equals(x.address) || this.address.equals(x.left)
                     || this.address.equals(x.right) || this.address.equals(x.parent))
@@ -254,47 +270,27 @@ class SpanningTreeRouter implements IRouter
                     return Helpers.resolvedUnit().then(() => x = null);
                 }
 
-                //                console.log("Y IS " + JSON.stringify(y));
                 y = x;
-                //                console.log("SET Y TO " + JSON.stringify(y));
 
                 if (z.key < x.key)
                 {
-                    if (x.left)
-                        return this.getNode(x.left, tag).then(left =>
-                        {
-                            x = left;
-                            //                            console.log("LEFT SET X TO " + JSON.stringify(x));
-                        });
-                    else
-                        return Helpers.resolvedUnit().then(() => x = null);
+                    if (x.left) return this.getNode(x.left, tag).then(left => x = left);
+                    else return Helpers.resolvedUnit().then(() => x = null);
                 }
                 else
                 {
-                    if (x.right)
-                        return this.getNode(x.right, tag).then(right =>
-                        {
-                            x = right;
-                            //                            console.log("RIGHT SET X TO " + JSON.stringify(x));
-                        });
-                    else
-                        return Helpers.resolvedUnit().then(() => x = null);
+                    if (x.right) return this.getNode(x.right, tag).then(right => x = right);
+                    else return Helpers.resolvedUnit().then(() => x = null);
                 }
                 //
             }).then(() =>
             {
                 if (!alreadyInTree)
                 {
-//                    console.log("INSERT: " + JSON.stringify(y));
-
                     z.parent = y.address;
 
-                    //                console.log("INSERT: " + JSON.stringify(y.address));
-
-                    if (z.key < y.key)
-                        this.setLeft(y.address, tag, z.address);
-                    else
-                        this.setRight(y.address, tag, z.address);
+                    if (z.key < y.key) this.setLeft(y.address, tag, z.address);
+                    else this.setRight(y.address, tag, z.address);
 
                     deferred.resolve(z);
                 }
@@ -308,7 +304,7 @@ class SpanningTreeRouter implements IRouter
 
     private minimum(x: SpanningTreeNode, tag: string): Promise<SpanningTreeNode>
     {
-        return this.promiseWhile(() => !!x.left, () =>
+        return Helpers.promiseWhile(() => !!x.left, () =>
         {
             return this.getNode(x.left, tag).then(left => x = left);
         }).then(() => x);
@@ -371,43 +367,48 @@ class SpanningTreeRouter implements IRouter
 
     private getNode(peer: Address, tag: string): Promise<SpanningTreeNode>
     {
-        return this.broker.send(peer, HttpMethod.Get, SpanningTreeMessages.GetNode, { tag: tag }).then(n => SpanningTreeNode.deserialise(n));
+        return this.broker.send(peer, SpanningTreeMessages.GetNode, { tag: tag }).then(n => SpanningTreeNode.deserialise(n));
     }
 
     private setLeft(peer: Address, tag: string, left: Address): Promise<void>
     {
-        return this.broker.send(peer, HttpMethod.Put, SpanningTreeMessages.SetLeft, { tag: tag, address: left });
+        return this.broker.send(peer, SpanningTreeMessages.SetLeft, { tag: tag, address: left });
     }
 
     private setRight(peer: Address, tag: string, right: Address): Promise<void>
     {
         //        console.log("SETTING RIGHT OF " + JSON.stringify(peer.toString()));
-        return this.broker.send(peer, HttpMethod.Put, SpanningTreeMessages.SetRight, { tag: tag, address: right });
+        return this.broker.send(peer, SpanningTreeMessages.SetRight, { tag: tag, address: right });
     }
 
     private setParent(peer: Address, tag: string, parent: Address): Promise<void>
     {
-        return this.broker.send(peer, HttpMethod.Put, SpanningTreeMessages.SetParent, { tag: tag, address: parent });
+        return this.broker.send(peer, SpanningTreeMessages.SetParent, { tag: tag, address: parent });
     }
 
     private ping(subscriber: Address)
     {
-        return this.broker.send(subscriber, HttpMethod.Get, RouterMessages.Ping, "");
+        return this.broker.send(subscriber, RouterMessages.Ping, "");
     }
 
-    // Borrowed from http://stackoverflow.com/a/17238793
-    private promiseWhile(condition: () => boolean, body: () => any): Promise<void>
+    private retrieve(responsiblePeer: Address, tag: string): Promise<Array<Message>>
     {
-        var deferred = Q.defer<void>();
+        return this.broker.send(responsiblePeer, RouterMessages.Retrieve, tag);
+    }
 
-        function loop()
-        {
-            if (!condition()) deferred.resolve((void 0));
-            else Q.when(body(), loop, deferred.reject);
-        }
+    private retrieveSince(responsiblePeer: Address, tag: string, timestamp: Date): Promise<Array<Message>>
+    {
+        return this.broker.send(responsiblePeer, RouterMessages.Retrieve, { identifier: tag, timestamp: timestamp });
+    }
 
-        Q.nextTick(loop);
-        return deferred.promise;
+    private persist(responsiblePeer: Address, message: Message): Promise<void>
+    {
+        return this.broker.send(responsiblePeer, RouterMessages.Persist, message);
+    }
+
+    private sweep(responsiblePeer: Address, timestamp: Date): Promise<void>
+    {
+        return this.broker.send(responsiblePeer, RouterMessages.Sweep, timestamp);
     }
 }
 

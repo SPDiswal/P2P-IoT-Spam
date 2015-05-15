@@ -1,18 +1,12 @@
 ﻿import IFilterEvaluator = require("./IFilterEvaluator");
-import IFilterParser = require("./IFilterParser");
 
-import Filter = require("./Filter");
 import Message = require("../Common/Message");
 
 class FilterEvaluator implements IFilterEvaluator
 {
-    constructor(private parser: IFilterParser)
+    public evaluate(filter: string, message: Message): boolean
     {
-    }
-
-    public evaluate(filterExpression: string, message: Message): boolean
-    {
-        return true;
+        return !!eval("(" + filter + ")(" + JSON.stringify(message.tags) + ", " + JSON.stringify(message.contents) + ");");
     }
 }
 

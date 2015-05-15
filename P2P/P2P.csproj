@@ -33,7 +33,6 @@
     <TypeScriptCompile Include="Common\Responsibility.ts" />
     <TypeScriptCompile Include="Filters\FilterParser.ts" />
     <TypeScriptCompile Include="Filters\IFilterParser.ts" />
-    <TypeScriptCompile Include="Http\HttpMethod.ts" />
     <TypeScriptCompile Include="Brokers\IBroker.ts" />
     <TypeScriptCompile Include="Brokers\RestChordBroker.ts" />
     <TypeScriptCompile Include="Common\Address.ts" />
@@ -41,7 +40,6 @@
     <TypeScriptCompile Include="Common\Subscription.ts" />
     <TypeScriptCompile Include="Core\IFramework.ts" />
     <TypeScriptCompile Include="Core\Framework.ts" />
-    <TypeScriptCompile Include="Filters\Filter.ts" />
     <TypeScriptCompile Include="Filters\FilterEvaluator.ts" />
     <TypeScriptCompile Include="Filters\IFilterEvaluator.ts" />
     <TypeScriptCompile Include="Guids\GuidGenerator.ts" />

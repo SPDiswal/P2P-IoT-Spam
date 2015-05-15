@@ -5,11 +5,10 @@ import Promise = Q.Promise;
 
 import IRequestDispatcher = require("./IRequestDispatcher");
 import IResponse = require("./IResponse");
-import HttpMethod = require("./HttpMethod");
 
 class RequestDispatcher implements IRequestDispatcher
 {
-    private sendRequest(method: string, url: string, data: string = ""): Promise<IResponse>
+    private send(method: string, url: string, data: string = ""): Promise<IResponse>
     {
         var options: any = { method: method };
         var protocol = "http";
@@ -76,24 +75,13 @@ class RequestDispatcher implements IRequestDispatcher
         return deferred.promise;
     }
 
-    public send(method: HttpMethod, url: string, data: string = "")
-    {
-        switch (method)
-        {
-            case HttpMethod.Post: return this.post(url, data);
-            case HttpMethod.Put: return this.put(url, data);
-            case HttpMethod.Delete: return this.delete(url, data);
-            default: return this.get(url, data);
-        }
-    }
+    public "delete"(url: string, data: string = "") { return this.send("DELETE", url, data); }
 
-    public "delete"(url: string, data: string = "") { return this.sendRequest("DELETE", url, data); }
+    public "get"(url: string, data: string = "") { return this.send("GET", url, data); }
 
-    public "get"(url: string, data: string = "") { return this.sendRequest("GET", url, data); }
+    public post(url: string, data: string = "") { return this.send("POST", url, data); }
 
-    public post(url: string, data: string = "") { return this.sendRequest("POST", url, data); }
-
-    public put(url: string, data: string = "") { return this.sendRequest("PUT", url, data); }
+    public put(url: string, data: string = "") { return this.send("PUT", url, data); }
 }
 
 export = RequestDispatcher;

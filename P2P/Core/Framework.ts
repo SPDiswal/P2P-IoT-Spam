@@ -5,6 +5,7 @@ import Promise = Q.Promise;
 
 import IBroker = require("../Brokers/IBroker");
 import IFilterEvaluator = require("../Filters/IFilterEvaluator");
+import IFilterParser = require("../Filters/IFilterParser");
 import IFramework = require("./IFramework");
 import IGuidGenerator = require("../Guids/IGuidGenerator");
 import IRouter = require("../Routers/IRouter");
@@ -25,10 +26,13 @@ class Framework implements IFramework
 {
     private chord: LocalChordPeer;
     private guidGenerator: IGuidGenerator = new GuidGenerator();
-    private evaluator: IFilterEvaluator = new FilterEvaluator(new FilterParser());
+    private parser: IFilterParser = new FilterParser();
+    private evaluator: IFilterEvaluator = new FilterEvaluator();
 
     private address: Address;
     private isRunning = false;
+
+    private isLoggingChord = false;
 
     constructor(app: Application, host: string, port: number, endpoint: string = "spam", private router: IRouter = null, private broker: IBroker = null)
     {
@@ -37,7 +41,7 @@ class Framework implements IFramework
         if (this.broker === null) this.broker = new RestChordBroker(this.address, new RequestDispatcher());
         if (this.router === null) this.router = new SpanningTreeRouter(this.address, this.broker, this.evaluator);
 
-        this.chord = new LocalChordPeer(app, this.broker, host + ":" + port, endpoint);
+        this.chord = new LocalChordPeer(app, this.broker, host + ":" + port, endpoint, this.isLoggingChord);
     }
 
     public publish(tags: Array<string>, contents: any): Promise<boolean>
@@ -47,15 +51,15 @@ class Framework implements IFramework
 
     public subscribe(tags: Array<string>, callback: (tags: Array<string>, contents: any) => void, retrieveOldMessages: boolean = false): Promise<string>
     {
-        return this.subscribeToContents(tags, "true", callback, retrieveOldMessages);
+        return this.subscribeToContents(tags, () => true, callback, retrieveOldMessages);
     }
 
-    public subscribeToContents(tags: Array<string>, filter: string, callback: (tags: Array<string>, contents: any) => void, retrieveOldMessages: boolean = false): Promise<string>
+    public subscribeToContents(tags: Array<string>, filter: (tags: Array<string>, contents: any) => boolean, callback: (tags: Array<string>, contents: any) => void, retrieveOldMessages: boolean = false): Promise<string>
     {
         return this.guard(() =>
         {
             var deferred = Q.defer<string>();
-            var subscription = new Subscription(this.address, tags, filter, (m: Message) => callback(m.tags, m.contents), this.guidGenerator);
+            var subscription = new Subscription(this.address, tags, this.parser.parse(filter), (m: Message) => callback(m.tags, m.contents), this.guidGenerator);
 
             this.router.subscribe(subscription, retrieveOldMessages)
                 .then(r =>

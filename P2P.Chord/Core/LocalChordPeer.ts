@@ -1,14 +1,12 @@
-﻿// TODO Replicate data.
-
-/// <reference path="../Scripts/typings/nedb/nedb.d.ts" />
+﻿/// <reference path="../Scripts/typings/nedb/nedb.d.ts" />
 
 import BodyParser = require("body-parser");
 import Express = require("express");
-//import File = require("fs");
 import NeDB = require("nedb");
 import Q = require("q");
 
 import Application = Express.Application;
+import Response = Express.Response;
 import Promise = Q.Promise;
 
 import IBroker = require("../../P2P/Brokers/IBroker");
@@ -72,270 +70,174 @@ class LocalChordPeer implements IPeer
     {
         var jsonParser = BodyParser.json();
 
-        app.get(this.endpoint + "/lookup/:key", (req, res) =>
-        {
-            var key = parseInt(req.params.key);
+        // 
+        // CHORD
+        // 
+        app.get(this.endpoint + "/lookup/:key", (req, res) => this.respondWithOkOnNumbers(res, req.params.key,
+            key => this.lookup(key)));
 
-            if (isNaN(key))
-                res.sendStatus(StatusCode.BadRequest);
-            else
+        app.get(this.endpoint + "/predecessor", (req, res) => this.respondWithOk(res,
+            this.getPredecessor()));
+
+        app.put(this.endpoint + "/predecessor/:address", (req, res) => this.respondWithNoContentOrBadRequest(res,
+            this.setPredecessor(req.params.address)));
+
+        app.get(this.endpoint + "/successor", (req, res) => this.respondWithOk(res,
+            this.getSuccessor(0)));
+
+        app.put(this.endpoint + "/successor/:address", (req, res) => this.respondWithNoContentOrBadRequest(res,
+            this.setSuccessor(0, req.params.address)));
+
+        app.get(this.endpoint + "/successors/:index", (req, res) => this.respondWithOkOnNumbers(res, req.params.index,
+            index => this.getSuccessor(index), Constants.SuccessorsCount));
+
+        app.put(this.endpoint + "/successors/:index/:address", (req, res) => this.respondWithNoContentOrBadRequestOnNumbers(res, req.params.index,
+            index => this.setSuccessor(index, req.params.address), Constants.SuccessorsCount));
+
+        app.get(this.endpoint + "/fingers/:index", (req, res) => this.respondWithOkOnNumbers(res, req.params.index,
+            index => this.getFinger(index), Constants.SpaceSize));
+
+        app.put(this.endpoint + "/fingers/:index/:address", (req, res) => this.respondWithNoContentOrBadRequestOnNumbers(res, req.params.index,
+            index => this.setFinger(index, req.params.address), Constants.SpaceSize));
+
+        app.get(this.endpoint + "/ping", (req, res) => this.respondWithNoContent(res,
+            this.ping()));
+
+        app.post(this.endpoint + "/notify/:address", (req, res) => this.respondWithNoContent(res,
+            this.notify(req.params.address)));
+
+        app.post(this.endpoint + "/join/:address", (req, res) => this.respondWithNoContent(res,
+            this.join(req.params.address)));
+
+        app.post(this.endpoint + "/leave", (req, res) => this.respondWithNoContent(res,
+            this.leave()));
+
+        // 
+        // ACTIONS
+        // 
+        app.post(this.endpoint + "/action/:message", jsonParser, (req, res) => this.respondWithOkOrNoContent(res,
+            this.action(req.params.message, req.body)));
+
+        // 
+        // RESPONSIBILITIES
+        // 
+        app.get(this.endpoint + "/responsibilities/:identifier", (req, res) => this.respondWithOkOrNotFound(res,
+            this.getResponsibility(req.params.identifier)));
+
+        app.get(this.endpoint + "/responsibilities", (req, res) => this.respondWithOk(res,
+            this.getResponsibilities()));
+
+        app.post(this.endpoint + "/responsibilities", jsonParser, (req, res) => this.respondWithNoContent(res,
+            this.postResponsibility(req.body)));
+
+        app.put(this.endpoint + "/responsibilities", jsonParser, (req, res) => this.respondWithNoContent(res,
+            this.putResponsibility(req.body)));
+
+        app.delete(this.endpoint + "/responsibilities/:identifier", (req, res) => this.respondWithNoContent(res,
+            this.deleteResponsibility(req.params.identifier)));
+
+        // 
+        // REPLICATIONS
+        // 
+        app.get(this.endpoint + "/replications/:identifier", (req, res) => this.respondWithOkOrNotFound(res,
+            this.getReplication(req.params.identifier)));
+
+        app.get(this.endpoint + "/replications", (req, res) => this.respondWithOk(res,
+            this.getReplications()));
+
+        app.post(this.endpoint + "/replications", jsonParser, (req, res) => this.respondWithNoContent(res,
+            this.postReplication(req.body)));
+
+        app.put(this.endpoint + "/replications", jsonParser, (req, res) => this.respondWithNoContent(res,
+            this.putReplication(req.body)));
+
+        app.delete(this.endpoint + "/replications/:identifier", (req, res) => this.respondWithNoContent(res,
+            this.deleteReplication(req.params.identifier)));
+
+        // 
+        // DATA
+        // 
+        app.get(this.endpoint + "/data", (req, res) => this.respondWithOk(res,
+            this.getAllData()));
+
+        app.get(this.endpoint + "/data/:tag", (req, res) => this.respondWithOk(res,
+            this.getData(req.params.tag)));
+
+        app.get(this.endpoint + "/data/:tag/:timestamp", (req, res) => this.respondWithOk(res,
+            this.getDataSince(req.params.tag, new Date(req.params.timestamp))));
+
+        app.post(this.endpoint + "/data", jsonParser, (req, res) => this.respondWithNoContent(res,
+            this.postData(req.body)));
+
+        app.put(this.endpoint + "/data", jsonParser, (req, res) => this.respondWithNoContent(res,
+            this.putData(req.body)));
+
+        app.delete(this.endpoint + "/data/:timestamp", (req, res) => this.respondWithNoContent(res,
+            this.deleteData(new Date(req.params.timestamp))));
+    }
+
+    private respondWithNoContent(res: Response, promise: Promise<void>)
+    {
+        promise.then(() => res.sendStatus(StatusCode.NoContent))
+            .catch(() => res.sendStatus(StatusCode.InternalServerError));
+    }
+
+    private respondWithNoContentOrBadRequest(res: Response, promise: Promise<void>)
+    {
+        promise.then(() => res.sendStatus(StatusCode.NoContent))
+            .catch(() => res.sendStatus(StatusCode.BadRequest));
+    }
+
+    private respondWithOk(res: Response, promise: Promise<any>)
+    {
+        promise.then((p: any) => res.status(StatusCode.Ok).json(p))
+            .catch(() => res.sendStatus(StatusCode.InternalServerError));
+    }
+
+    private respondWithOkOrNoContent(res: Response, promise: Promise<any>)
+    {
+        promise.then((p: any) =>
+        {
+            if (p) res.status(StatusCode.Ok).json(p);
+            else res.sendStatus(StatusCode.NoContent);
+        }).catch(() => res.sendStatus(StatusCode.InternalServerError));
+    }
+
+    private respondWithOkOrNotFound(res: Response, promise: Promise<any>)
+    {
+        promise.then((p: any) =>
+        {
+            if (p) res.status(StatusCode.Ok).json(p);
+            else res.sendStatus(StatusCode.NotFound);
+        }).catch(() => res.sendStatus(StatusCode.InternalServerError));
+    }
+
+    private respondWithOkOnNumbers(res: Response, argument: any, promise: (key: number) => Promise<any>, upperBound?: number)
+    {
+        var key = parseInt(argument);
+
+        if (isNaN(key) || (upperBound && key >= upperBound))
+            res.sendStatus(StatusCode.BadRequest);
+        else
+        {
+            promise(key).then((p: any) =>
             {
-                this.lookup(key)
-                    .then(p => res.status(StatusCode.Ok).json({ peer: p }))
-                    .catch(() => res.sendStatus(StatusCode.InternalServerError));
-            }
-        });
+                res.status(StatusCode.Ok).json(p);
+            }).catch(() => res.sendStatus(StatusCode.InternalServerError));
+        }
+    }
 
-        app.get(this.endpoint + "/predecessor", (req, res) =>
-        {
-            this.getPredecessor()
-                .then(p => res.status(StatusCode.Ok).json({ peer: p }))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
+    private respondWithNoContentOrBadRequestOnNumbers(res: Response, argument: any, promise: (key: number) => Promise<any>, upperBound?: number)
+    {
+        var key = parseInt(argument);
 
-        app.put(this.endpoint + "/predecessor/:address", (req, res) =>
+        if (isNaN(key) || (upperBound && key >= upperBound))
+            res.sendStatus(StatusCode.BadRequest);
+        else
         {
-            this.setPredecessor(req.params.address)
-                .then(() => res.sendStatus(StatusCode.NoContent))
+            promise(key).then(() => res.sendStatus(StatusCode.NoContent))
                 .catch(() => res.sendStatus(StatusCode.BadRequest));
-        });
-
-        app.get(this.endpoint + "/successor", (req, res) =>
-        {
-            this.getSuccessor(0)
-                .then(p => res.status(StatusCode.Ok).json({ peer: p }))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.put(this.endpoint + "/successor/:address", (req, res) =>
-        {
-            this.setSuccessor(0, req.params.address)
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.BadRequest));
-        });
-
-        app.get(this.endpoint + "/successors/:index", (req, res) =>
-        {
-            var index = parseInt(req.params.index);
-
-            if (isNaN(index) || index >= Constants.SuccessorsCount)
-                res.sendStatus(StatusCode.BadRequest);
-            else
-            {
-                this.getSuccessor(index)
-                    .then(p => res.status(StatusCode.Ok).json({ peer: p }))
-                    .catch(() => res.sendStatus(StatusCode.InternalServerError));
-            }
-        });
-
-        app.put(this.endpoint + "/successors/:index/:address", (req, res) =>
-        {
-            var index = parseInt(req.params.index);
-
-            if (isNaN(index) || index >= Constants.SpaceSize)
-                res.sendStatus(StatusCode.BadRequest);
-            else
-            {
-                this.setSuccessor(index, req.params.address)
-                    .then(() => res.sendStatus(StatusCode.NoContent))
-                    .catch(() => res.sendStatus(StatusCode.BadRequest));
-            }
-        });
-
-        app.get(this.endpoint + "/fingers/:index", (req, res) =>
-        {
-            var index = parseInt(req.params.index);
-
-            if (isNaN(index) || index >= Constants.SpaceSize)
-                res.sendStatus(StatusCode.BadRequest);
-            else
-            {
-                this.getFinger(index)
-                    .then(p => res.status(StatusCode.Ok).json({ peer: p }))
-                    .catch(() => res.sendStatus(StatusCode.InternalServerError));
-            }
-        });
-
-        app.put(this.endpoint + "/fingers/:index/:address", (req, res) =>
-        {
-            var index = parseInt(req.params.index);
-
-            if (isNaN(index) || index >= Constants.SpaceSize)
-                res.sendStatus(StatusCode.BadRequest);
-            else
-            {
-                this.setFinger(index, req.params.address)
-                    .then(() => res.sendStatus(StatusCode.NoContent))
-                    .catch(() => res.sendStatus(StatusCode.BadRequest));
-            }
-        });
-
-        app.get(this.endpoint + "/ping", (req, res) =>
-        {
-            this.ping()
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.post(this.endpoint + "/notify/:address", (req, res) =>
-        {
-            this.notify(req.params.address)
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.post(this.endpoint + "/join/:address", (req, res) =>
-        {
-            this.join(req.params.address)
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.post(this.endpoint + "/leave", (req, res) =>
-        {
-            this.leave()
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.get(this.endpoint + "/action/:message", jsonParser, (req, res) =>
-        {
-            this.action(req.params.message, req.body)
-                .then((r: any) => res.status(StatusCode.Ok).json(r))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.post(this.endpoint + "/action/:message", jsonParser, (req, res) =>
-        {
-            this.action(req.params.message, req.body)
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.put(this.endpoint + "/action/:message", jsonParser, (req, res) =>
-        {
-            this.action(req.params.message, req.body)
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.delete(this.endpoint + "/action/:message", jsonParser, (req, res) =>
-        {
-            this.action(req.params.message, req.body)
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.get(this.endpoint + "/responsibilities/:identifier", (req, res) =>
-        {
-            this.getResponsibility(req.params.identifier).then(p =>
-                {
-                    if (p !== null) res.status(StatusCode.Ok).json(p);
-                    else res.sendStatus(StatusCode.NotFound);
-                }
-            ).catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.get(this.endpoint + "/responsibilities", (req, res) =>
-        {
-            this.getResponsibilities()
-                .then(p => res.status(StatusCode.Ok).json(p))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.post(this.endpoint + "/responsibilities", jsonParser, (req, res) =>
-        {
-            this.postResponsibility(req.body)
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.put(this.endpoint + "/responsibilities", jsonParser, (req, res) =>
-        {
-            this.putResponsibility(req.body)
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.delete(this.endpoint + "/responsibilities/:identifier", (req, res) =>
-        {
-            this.deleteResponsibility(req.params.identifier)
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.get(this.endpoint + "/replications/:identifier", (req, res) =>
-        {
-            this.getReplication(req.params.identifier).then(p =>
-                {
-                    if (p !== null) res.status(StatusCode.Ok).json(p);
-                    else res.sendStatus(StatusCode.NotFound);
-                }
-            ).catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.get(this.endpoint + "/replications", (req, res) =>
-        {
-            this.getReplications()
-                .then(p => res.status(StatusCode.Ok).json(p))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.post(this.endpoint + "/replications", jsonParser, (req, res) =>
-        {
-            this.postReplication(req.body)
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.put(this.endpoint + "/replications", jsonParser, (req, res) =>
-        {
-            this.putReplication(req.body)
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.delete(this.endpoint + "/replications/:identifier", (req, res) =>
-        {
-            this.deleteReplication(req.params.identifier)
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.get(this.endpoint + "/data", (req, res) =>
-        {
-            this.getAllData()
-                .then(messages => res.status(StatusCode.Ok).json(messages))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.get(this.endpoint + "/data/:tag", (req, res) =>
-        {
-            this.getData(req.params.tag)
-                .then(messages => res.status(StatusCode.Ok).json(messages))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.get(this.endpoint + "/data/:tag/:timestamp", (req, res) =>
-        {
-            this.getDataSince(req.params.tag, new Date(req.params.timestamp))
-                .then(messages => res.status(StatusCode.Ok).json(messages))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.put(this.endpoint + "/data", jsonParser, (req, res) =>
-        {
-            this.putData(req.body)
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
-
-        app.delete(this.endpoint + "/data/:timestamp", (req, res) =>
-        {
-            this.deleteData(new Date(req.params.timestamp))
-                .then(() => res.sendStatus(StatusCode.NoContent))
-                .catch(() => res.sendStatus(StatusCode.InternalServerError));
-        });
+        }
     }
 
     public get address(): string
@@ -353,6 +255,31 @@ class LocalChordPeer implements IPeer
         return Helpers.resolvedUnit();
     }
 
+    private setPeer(currentPeer: IPeer, newAddress: string, update: (p: IPeer) => void, ping = true): Promise<void>
+    {
+        // Does not update the peer if the new peer is the same as the current one.
+        if ((currentPeer && currentPeer.address === newAddress) || (!currentPeer && !newAddress))
+            return Helpers.resolvedUnit();
+
+        if (newAddress)
+        {
+            // Sets the peer to this local instance if the new peer is this peer.
+            if (newAddress === this.address) update(this);
+            //
+            // Creates a new remote peer instance and updates the peer.
+            else
+            {
+                var peer = new RemoteChordPeer(newAddress, this.endpoint);
+
+                if (ping) return peer.ping().then(() => update(peer));
+                else update(peer);
+            }
+        }
+        else update(null);
+
+        return Helpers.resolvedUnit();
+    }
+
     public getPredecessor(): Promise<string>
     {
         if (this.predecessor) return Helpers.resolvedPromise(this.predecessor.address);
@@ -361,42 +288,11 @@ class LocalChordPeer implements IPeer
 
     public setPredecessor(newPredecessor: string = null, ping = true): Promise<void>
     {
-        if ((this.predecessor && newPredecessor === this.predecessor.address)
-            || (!newPredecessor && !this.predecessor))
-            return Helpers.resolvedUnit();
-
-        if (newPredecessor)
+        return this.setPeer(this.predecessor, newPredecessor, p =>
         {
-            if (newPredecessor === this.address)
-            {
-                this.predecessor = this;
-                this.log("New predecessor is " + this.address + ".");
-                return Helpers.resolvedUnit();
-            }
-
-            var peer = new RemoteChordPeer(newPredecessor, this.endpoint);
-
-            if (ping)
-            {
-                var deferred = Q.defer<void>();
-
-                peer.ping().then(() =>
-                {
-                    this.predecessor = peer;
-                    this.log("New predecessor is " + peer.address + ".");
-                    deferred.resolve((void 0));
-                }).catch(() => deferred.reject((void 0)));
-
-                return deferred.promise;
-            }
-
-            this.predecessor = peer;
-            return Helpers.resolvedUnit();
-        }
-
-        this.predecessor = null;
-        this.log("New predecessor is NONE.");
-        return Helpers.resolvedUnit();
+            this.predecessor = p;
+            this.log("New predecessor is " + (!!p ? p.address : "NONE") + ".");
+        }, ping);
     }
 
     public getSuccessor(index: number): Promise<string>
@@ -406,36 +302,11 @@ class LocalChordPeer implements IPeer
 
     public setSuccessor(index: number, newSuccessor: string, ping = true): Promise<void>
     {
-        if (this.successors[index] && newSuccessor === this.successors[index].address)
-            return Helpers.resolvedUnit();
-
-        if (newSuccessor === this.address)
+        return this.setPeer(this.successors[index], newSuccessor, p =>
         {
-            this.successors[index] = this;
-            if (index === 0) this.log("New successor is " + this.address + ".");
-            return Helpers.resolvedUnit();
-        }
-
-        var peer = new RemoteChordPeer(newSuccessor, this.endpoint);
-
-        if (ping)
-        {
-            var deferred = Q.defer<void>();
-
-            peer.ping().then(() =>
-            {
-                this.successors[index] = peer;
-                if (index === 0) this.log("New successor is " + peer.address + ".");
-
-                deferred.resolve((void 0));
-            }).catch(() => deferred.reject((void 0)));
-
-            return deferred.promise;
-        }
-
-        this.successors[index] = peer;
-        if (index === 0) this.log("New successor is " + peer.address + ".");
-        return Helpers.resolvedUnit();
+            this.successors[index] = p;
+            if (index === 0) this.log("New successor is " + (!!p ? p.address : "NONE") + ".");
+        }, ping);
     }
 
     public getFinger(index: number): Promise<string>
@@ -445,32 +316,11 @@ class LocalChordPeer implements IPeer
 
     public setFinger(index: number, newFinger: string, ping = true): Promise<void>
     {
-        if (this.fingers[index] && newFinger === this.fingers[index].address)
-            return Helpers.resolvedUnit();
-
-        if (newFinger === this.address)
+        return this.setPeer(this.fingers[index], newFinger, p =>
         {
-            this.fingers[index] = this;
-            return Helpers.resolvedUnit();
-        }
-
-        var peer = new RemoteChordPeer(newFinger, this.endpoint);
-
-        if (ping)
-        {
-            var deferred = Q.defer<void>();
-
-            peer.ping().then(() =>
-            {
-                this.fingers[index] = peer;
-                deferred.resolve((void 0));
-            }).catch(() => deferred.reject((void 0)));
-
-            return deferred.promise;
-        }
-
-        this.fingers[index] = peer;
-        return Helpers.resolvedUnit();
+            this.fingers[index] = p;
+            this.log("New finger at " + index + " is " + (!!p ? p.address : "NONE") + ".");
+        }, ping);
     }
 
     public lookup(key: number): Promise<string>
@@ -484,6 +334,8 @@ class LocalChordPeer implements IPeer
         }
 
         key %= Math.pow(2, Constants.SpaceSize);
+
+        this.log("Looking up " + key);
 
         if (this.predecessor != null && Helpers.inRangeInclusive(key, this.predecessor.id, this.id))
             deferred.resolve(this.address);
@@ -503,25 +355,27 @@ class LocalChordPeer implements IPeer
         return deferred.promise;
     }
 
-    private closestLivingPrecedingNode(key: number, index: number = Constants.SpaceSize - 1): Promise<IPeer>
+    private closestLivingPrecedingNode(key: number): Promise<IPeer>
     {
-        if (index >= 0)
+        var index = Constants.SpaceSize - 1;
+        var candidate: IPeer = null;
+
+        return Helpers.promiseWhile(() => index >= 0 && !candidate, () =>
         {
             if (Helpers.inRangeExclusive(this.fingers[index].id, this.id, key))
-            {
-                var deferred = Q.defer<IPeer>();
-
-                this.fingers[index].ping()
-                    .then(() => deferred.resolve(this.fingers[index]))
-                    .catch(() => this.closestLivingPrecedingNode(key, index - 1).then(p => deferred.resolve(p)));
-
-                return deferred.promise;
-            }
-            else
-                return this.closestLivingPrecedingNode(key, index - 1);
-        }
-        else
-            return Helpers.resolvedPromise(this);
+                return this.fingers[index].ping().then(() =>
+                {
+                    candidate = this.fingers[index];
+                    index--;
+                });
+            //
+            else return Helpers.resolvedUnit().then(() => index--);
+            //
+        }).then<IPeer>(() =>
+        {
+            if (!candidate) candidate = this;
+            return Helpers.resolvedPromise(candidate);
+        });
     }
 
     public notify(potentialPredecessor: string): Promise<void>
@@ -536,16 +390,8 @@ class LocalChordPeer implements IPeer
 
     public join(knownAddress: string): Promise<void>
     {
-        var deferred = Q.defer<void>();
         var peer = new RemoteChordPeer(knownAddress, this.endpoint);
-
-        peer.ping().then<string>(() => peer.lookup(this.id)).then(p =>
-        {
-            this.resetToSinglePeer(p);
-            deferred.resolve((void 0));
-        }).catch(() => deferred.reject((void 0)));
-
-        return deferred.promise;
+        return peer.ping().then<string>(() => peer.lookup(this.id)).then(p => this.resetToSinglePeer(p));
     }
 
     public leave(): Promise<void>
@@ -554,13 +400,10 @@ class LocalChordPeer implements IPeer
         {
             this.interrupt();
 
-            this.predecessor.setSuccessor(0, this.successor.address).then(() =>
-            {
-                this.successor.setPredecessor(this.predecessor.address).then(() =>
-                {
-                    this.run();
-                });
-            });
+            Q.all([
+                this.predecessor.setSuccessor(0, this.successor.address),
+                this.successor.setPredecessor(this.predecessor.address)
+            ]).then(() => this.run());
         }
 
         return Helpers.resolvedUnit();
@@ -707,6 +550,21 @@ class LocalChordPeer implements IPeer
         return deferred.promise;
     }
 
+    public postData(incomingData: Message): Promise<void>
+    {
+        var data = JSON.parse(JSON.stringify(incomingData));
+        delete data["id"];
+        this.database.insert(new DataRow(incomingData.id, data, new Date()));
+
+        for (var k = 0; k < this.successors.length; k++)
+        {
+            if (this.successors[k].address !== this.address)
+                this.successors[k].putData(incomingData);
+        }
+
+        return Helpers.resolvedUnit();
+    }
+
     public putData(incomingData: Message): Promise<void>
     {
         var data = JSON.parse(JSON.stringify(incomingData));
@@ -730,7 +588,7 @@ class LocalChordPeer implements IPeer
     {
         this.fixSuccessor(0).then<string>(() => this.successor.getPredecessor()).then(p =>
         {
-            if (p !== null && Helpers.inRangeExclusive(Helpers.hash(p), this.id, this.successor.id))
+            if (p && Helpers.inRangeExclusive(Helpers.hash(p), this.id, this.successor.id))
                 this.setSuccessor(0, p);
 
             this.successor.notify(this.address);
@@ -739,7 +597,7 @@ class LocalChordPeer implements IPeer
 
     private checkPredecessor()
     {
-        if (this.predecessor !== null)
+        if (this.predecessor)
         {
             this.predecessor.ping().catch(() =>
             {
@@ -751,26 +609,24 @@ class LocalChordPeer implements IPeer
 
     private fixFingers()
     {
-        this.fixFinger(this.currentFingerFixed).then(() => { this.currentFingerFixed = (this.currentFingerFixed + 1) % Constants.SpaceSize; });
+        this.fixFinger(this.currentFingerFixed)
+            .catch(() => this.setFinger(this.currentFingerFixed, this.successor.address))
+            .done(() => { this.currentFingerFixed = (this.currentFingerFixed + 1) % Constants.SpaceSize; });
     }
 
     private fixFinger(index: number): Promise<void>
     {
-        var deferred = Q.defer<void>();
-
-        this.lookup(this.id + Math.pow(2, index)).then(p =>
+        return this.lookup(this.id + Math.pow(2, index)).then<void>(p =>
         {
-            //            this.log("Fixing finger " + index);
+            this.log("Fixing finger " + index);
             this.setFinger(index, p);
-            deferred.resolve((void 0));
-        }).catch(() => this.setFinger(index, this.successor.address));
-
-        return deferred.promise;
+        });
     }
 
     private fixSuccessors()
     {
-        this.fixSuccessor(this.currentSuccessorFixed).then(() => { this.currentSuccessorFixed = (this.currentSuccessorFixed + 1) % Constants.SuccessorsCount; });
+        this.fixSuccessor(this.currentSuccessorFixed)
+            .done(() => { this.currentSuccessorFixed = (this.currentSuccessorFixed + 1) % Constants.SuccessorsCount; });
     }
 
     private fixSuccessor(index: number): Promise<void>
@@ -820,46 +676,50 @@ class LocalChordPeer implements IPeer
     {
         for (var i = this.responsibilities.length - 1; i >= 0; i--)
         {
-            ((j: number) =>
+            ((responsibility: Responsibility) =>
             {
-                this.lookup(Helpers.hash(this.responsibilities[j].identifier)).then(r =>
+                this.lookup(Helpers.hash(responsibility.identifier)).then(p =>
                 {
-                    if (r !== this.address)
+                    // This peer is no longer responsible and re-assigns the responsibility to the responsible peer.
+                    if (p !== this.address)
                     {
-                        var peer = new RemoteChordPeer(r, this.endpoint);
+                        var peer = new RemoteChordPeer(p, this.endpoint);
 
-                        peer.putResponsibility(this.responsibilities[j]);
-                        this.deleteResponsibility(this.responsibilities[j].identifier);
+                        peer.putResponsibility(responsibility);
+                        this.deleteResponsibility(responsibility.identifier);
                     }
+                    // This peer is still responsible and pushes replications to its successors.
                     else
                     {
-                        for (var k = 0; k < this.successors.length; k++)
-                            this.successors[k].postReplication(this.responsibilities[j]);
+                        for (var j = 0; j < this.successors.length; j++)
+                        {
+                            if (this.successors[j].address !== this.address)
+                                this.successors[j].postReplication(responsibility);
+                        }
                     }
                 });
-            })(i);
+            })(this.responsibilities[i]);
         }
     }
 
     private checkReplications()
     {
-        // TODO Merge database of replicating peers with own database to ensure up-to-date contents
-
         this.replications = ArrayUtilities.except(this.replications, this.responsibilities);
 
         for (var i = this.replications.length - 1; i >= 0; i--)
         {
-            ((j: number) =>
+            ((replication: Responsibility) =>
             {
-                this.lookup(Helpers.hash(this.replications[j].identifier)).then(r =>
+                this.lookup(Helpers.hash(replication.identifier)).then(p =>
                 {
-                    if (r === this.address)
+                    // This peer is now responsible and promotes the replication to a responsibility.
+                    if (p === this.address)
                     {
-                        this.postResponsibility(this.replications[j]);
-                        this.deleteReplication(this.replications[j].identifier);
+                        this.postResponsibility(replication);
+                        this.deleteReplication(replication.identifier);
                     }
                 });
-            })(i);
+            })(this.replications[i]);
         }
     }
 
@@ -878,6 +738,9 @@ class LocalChordPeer implements IPeer
 
         for (i = 0; i < Constants.SpaceSize; i++)
             this.setFinger(i, knownPeer);
+
+        this.currentFingerFixed = 0;
+        this.currentSuccessorFixed = 0;
     }
 
     private log(message: string)
@@ -889,9 +752,9 @@ class LocalChordPeer implements IPeer
     private interrupt()
     {
         clearInterval(this.stabiliseInterval);
+        clearInterval(this.checkPredecessorInterval);
         clearInterval(this.fixFingersInterval);
         clearInterval(this.fixSuccessorsInterval);
-        clearInterval(this.checkPredecessorInterval);
         clearInterval(this.checkResponsibilitiesInterval);
         clearInterval(this.checkReplicationsInterval);
         clearInterval(this.heartbeatInterval);
@@ -904,336 +767,14 @@ class LocalChordPeer implements IPeer
 
         var numberOfIntervals = 7;
 
-        this.stabiliseInterval = setInterval(() => this.stabilise(), Constants.StabiliseInterval);
-        this.checkPredecessorInterval = setTimeout(() => setInterval(() => this.checkPredecessor(), Constants.StabiliseInterval), 1 * Constants.StabiliseInterval / numberOfIntervals);
-        this.fixFingersInterval = setTimeout(() => setInterval(() => this.fixFingers(), Constants.StabiliseInterval), 2 * Constants.StabiliseInterval / numberOfIntervals);
-        this.fixSuccessorsInterval = setTimeout(() => setInterval(() => this.fixSuccessors(), Constants.StabiliseInterval), 3 * Constants.StabiliseInterval / numberOfIntervals);
-        this.checkResponsibilitiesInterval = setTimeout(() => setInterval(() => this.checkResponsibilities(), Constants.StabiliseInterval), 4 * Constants.StabiliseInterval / numberOfIntervals);
-        this.checkReplicationsInterval = setTimeout(() => setInterval(() => this.checkReplications(), Constants.StabiliseInterval), 5 * Constants.StabiliseInterval / numberOfIntervals);
-        this.heartbeatInterval = setTimeout(() => setInterval(() => this.sendHeartbeat(), Constants.StabiliseInterval), 6 * Constants.StabiliseInterval / numberOfIntervals);
+        setTimeout(() => this.stabiliseInterval = setInterval(() => this.stabilise(), Constants.StabiliseInterval), 0 * Constants.StabiliseInterval / numberOfIntervals);
+        setTimeout(() => this.checkPredecessorInterval = setInterval(() => this.checkPredecessor(), Constants.StabiliseInterval), 1 * Constants.StabiliseInterval / numberOfIntervals);
+        setTimeout(() => this.fixFingersInterval = setInterval(() => this.fixFingers(), Constants.StabiliseInterval), 2 * Constants.StabiliseInterval / numberOfIntervals);
+        setTimeout(() => this.fixSuccessorsInterval = setInterval(() => this.fixSuccessors(), Constants.StabiliseInterval), 3 * Constants.StabiliseInterval / numberOfIntervals);
+        setTimeout(() => this.checkResponsibilitiesInterval = setInterval(() => this.checkResponsibilities(), Constants.StabiliseInterval), 4 * Constants.StabiliseInterval / numberOfIntervals);
+        setTimeout(() => this.checkReplicationsInterval = setInterval(() => this.checkReplications(), Constants.StabiliseInterval), 5 * Constants.StabiliseInterval / numberOfIntervals);
+        setTimeout(() => this.heartbeatInterval = setInterval(() => this.sendHeartbeat(), Constants.StabiliseInterval), 6 * Constants.StabiliseInterval / numberOfIntervals);
     }
 }
 
 export = LocalChordPeer;
-
-//    private insertStatement: SQLite.Statement;
-//    private insertWithTimestampStatement: SQLite.Statement;
-//    private selectStatement: SQLite.Statement;
-//    private selectSinceStatement: SQLite.Statement;
-//    private selectLastTimestampStatement: SQLite.Statement;
-//    private deleteStatement: SQLite.Statement;
-//
-//    private createSql = "CREATE TABLE IF NOT EXISTS Messages (Id VARCHAR(255), Contents TEXT, Tags TEXT, Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(Id))";
-//    private insertSql = "INSERT OR IGNORE INTO Messages (Id, Contents, Tags) VALUES (?, ?, ?)";
-//    private insertWithTimestampSql = "INSERT OR IGNORE INTO Messages (Id, Contents, Tags, Timestamp) VALUES (?, ?, ?, ?)";
-//    private selectSql = "SELECT Id, Contents, Tags, Timestamp FROM Messages WHERE ? IN Tags ORDER BY Timestamp";
-//    private selectSinceSql = "SELECT Id, Contents, Tags, Timestamp FROM Messages WHERE ? IN Tags AND DATETIME(Timestamp) >= ? ORDER BY Timestamp";
-//    private selectLastTimestampSql = "SELECT Timestamp FROM Messages WHERE ? IN Tags ORDER BY Timestamp DESC LIMIT 1";
-//    private deleteSql = "DELETE FROM Messages WHERE DATETIME(Timestamp) < ?";
-//
-//    private messagesTable = "CREATE TABLE IF NOT EXISTS Messages (Id VARCHAR(255), Contents TEXT, Tags TEXT, Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(Id))";
-//    private tagsTable = "CREATE TABLE IF NOT EXISTS Tags (TagName TEXT, UNIQUE(Id))";
-//
-//    // Sets up SQLite database.
-//    var dataPath = __dirname + "/Data/" + Helpers.hash(address) + ".db";
-//
-//    if (!File.existsSync(dataPath))
-//        File.openSync(dataPath, "w");
-//
-//    var db = new SQLite.Database(dataPath);
-//
-//    this.insertStatement = db.prepare(this.insertSql);
-//    this.insertWithTimestampStatement = db.prepare(this.insertWithTimestampSql);
-//    this.selectStatement = db.prepare(this.selectSql);
-//    this.selectSinceStatement = db.prepare(this.selectSinceSql);
-//    this.selectLastTimestampStatement = db.prepare(this.selectLastTimestampSql);
-//    this.deleteStatement = db.prepare(this.deleteSql);
-//
-//    db.run(this.createSql,() => {
-//        // Launches the chord service locally on the given port.
-//        app.listen(port, host,() => chord.goLive());
-//    });
-//    
-//    public listFingers(req: Express.Request, res: Express.Response)
-//    {
-//        res.status(200).json({
-//            mostRecentlyFixedFinger: this.currentFingerFixed,
-//            mostRecentlyFixedSuccessor: this.currentSuccessorFixed,
-//            fingers: this.fingers,
-//            successors: this.successorList
-//        });
-//    }
-//
-//    public findTag(tag: string)
-//    {
-//        var tags = this.tagResponsibilities.filter(t => (t === tag));
-//        return tags.length === 0 ? null : tags[0];
-//    }
-//
-//    public listTags(req: Express.Request, res: Express.Response)
-//    {
-//        res.status(200).json({ tags: this.tagResponsibilities });
-//    }
-//
-//    public readMessagesOfTagSince(req: Express.Request, res: Express.Response)
-//    {
-//        var tag = req.params.tag;
-//        var id = Helpers.hash(tag);
-//        var timestamp = req.params.timestamp;
-//
-////        console.log("-> Reading resource " + name + " since " + timestamp);
-//
-//        this.findSuccessor(id).then(r =>
-//        {
-//            var responsiblePeer = new Peer(r.response.result);
-//
-//            if (responsiblePeer.id === this.self.id)
-//            {
-//                var rows: Array<IDataRow> = [ ];
-//                this.selectSinceStatement.bind(tag, timestamp).each((err: any, row: IDataRow) => rows.push(row), () => res.status(200).json(rows));
-//            }
-//            else
-//            {
-//                responsiblePeer.retrieveMessagesSince(tag, timestamp).then(result =>
-//                {
-//                    if (result.statusCode === 200)
-//                        res.status(200).json(result.response);
-//                    else
-//                        res.sendStatus(result.statusCode);
-//                });
-//            }
-//        });
-//    }
-//
-//    public readAllMessagesOfTag(req: Express.Request, res: Express.Response)
-//    {
-//        var tag = req.params.tag;
-//        var id = Helpers.hash(tag);
-//
-////        console.log("-> Reading resource " + tag);
-//
-//        this.findSuccessor(id).then(r =>
-//        {
-//            var responsiblePeer = new Peer(r.response.result);
-//
-//            if (responsiblePeer.id === this.self.id)
-//            {
-//                if (this.findTag(tag) !== null)
-//                {
-//                    var rows: Array<IDataRow> = [ ];
-//
-//                    this.selectStatement.bind(tag).each((err: any, row: IDataRow) =>
-//                    {
-//                        rows.push(row);
-//                    }, () =>
-//                    {
-//                        res.status(200).json(rows);
-//                    });
-//                }
-//                else
-//                    res.status(200).json(<any>[ ]);
-//            }
-//            else
-//            {
-//                responsiblePeer.retrieveAllMessages(tag).then(result =>
-//                {
-//                    if (result.statusCode === 200)
-//                        res.status(200).json(result.response);
-//                    else
-//                        res.sendStatus(result.statusCode);
-//                });
-//            }
-//        });
-//    }
-//
-//    public storeMessage(req: Express.Request, res: Express.Response)
-//    {
-//        var body = req.body;
-//
-//        if (typeof body.name === "undefined" || typeof body.url === "undefined")
-//        {
-//            res.sendStatus(400);
-//            return;
-//        }
-//
-//        var id = body.id;
-//        var contents = body.contents;
-//        var tags = body.tagResponsibilities;
-//
-////        console.log("-> Registering resource " + name);
-//
-//        this.tagResponsibilities = this.tagResponsibilities.filter(item => (!(item.name === name)));
-//        this.tagResponsibilities.push(<string>
-//        {
-//            name: name,
-//            id: id,
-//            url: url,
-//            primary: primary
-//        });
-//
-//        if (initialData !== null && typeof initialData !== "undefined")
-//        {
-//            for (var i = 0; i < initialData.length; i++)
-//                this.insertWithTimestampStatement.run(initialData[i].Peer, name, initialData[i].Value, initialData[i].Timestamp);
-//        }
-//
-//        for (i = 0; i < Constants.SuccessorListCount; i++)
-//        {
-//            ((j: number) =>
-//            {
-//                this.successorList[j].replicate(this.findResource(name));
-//            })(i);
-//        }
-//
-//        res.sendStatus(204);
-//    }
-//
-//    public removeResource(req: Express.Request, res: Express.Response)
-//    {
-//        var name = req.params.name;
-//
-//        console.log("-> Removing resource " + name);
-//
-//        this.resources = this.resources.filter(item => (!(item.name === name)));
-//        this.deleteStatement.run(name);
-//
-//        res.sendStatus(204);
-//    }
-//
-//    public listReplications(req: Express.Request, res: Express.Response)
-//    {
-//        res.status(200).json({ replications: this.replications });
-//    }
-//
-//    public registerReplication(req: Express.Request, res: Express.Response)
-//    {
-//        var body = req.body;
-//        var name = body.name;
-//        var id = Helpers.hash(body.name);
-//        var url = body.url;
-//        var primary = body.primary;
-//
-//        console.log("-> Registering replicated resource " + name);
-//
-//        this.replications = this.replications.filter(item => (!(item.name === name)));
-//        this.replications.push(<IResource>
-//        {
-//            name: name,
-//            id: id,
-//            url: url,
-//            primary: primary
-//        });
-//
-//        res.sendStatus(204);
-//    }
-//
-//    private checkResources()
-//    {
-//        if (this.moveTagResponsibilityTimeout > 0)
-//            this.moveTagResponsibilityTimeout--;
-//        else
-//        {
-//            for (var i = this.tagResponsibilities.length - 1; i >= 0; i--)
-//            {
-//                ((j: number) =>
-//                {
-//                    this.findSuccessor(Helpers.hash(this.tagResponsibilities[j])).then(r =>
-//                    {
-//                        var responsiblePeer = new Peer(r.response.result);
-//
-//                        if (responsiblePeer.id !== this.self.id)
-//                            this.moveTagResponsibility(responsiblePeer, this.tagResponsibilities[j]);
-//                    });
-//                })(i);
-//            }
-//        }
-//    }
-//
-//    private moveTagResponsibility(targetPeer: Peer, tag: string)
-//    {
-////        console.log("Moving resource " + resource.name + " to " + targetPeer.address + "...");
-//
-//        var rows: Array<IDataRow> = [ ];
-//
-//        this.selectStatement.bind(tag).each((err: any, row: IDataRow) =>
-//        {
-//            rows.push(row);
-//        }, () =>
-//        {
-//            tag.initialData = rows;
-//            targetPeer.registerResource(tag).then(() => { this.self.removeResource(tag.name); });
-//        });
-//    }
-//
-//    private snapshot()
-//    {
-//        for (var i = 0; i < this.resources.length; i++)
-//        {
-//            ((j: number) =>
-//            {
-//                new RequestDispatcher().get(this.resources[j].url).then(r =>
-//                {
-//                    var data = r.response;
-//
-//                    for (var c = 0; c < this.resources[j].primary.length; c++)
-//                    {
-//                        if (!data.hasOwnProperty(this.resources[j].primary[c]))
-//                            data = { };
-//                        else
-//                            data = data[this.resources[j].primary[c]];
-//                    }
-//
-//                    this.insertStatement.run(this.self.address, this.resources[j].name, JSON.stringify(data));
-//                });
-//            })(i);
-//        }
-//
-//        for (i = this.replications.length - 1; i >= 0; i--)
-//        {
-//            ((j: number) =>
-//            {
-//                this.findSuccessor(this.replications[j].id).then((r: IResponse) =>
-//                {
-//                    var responsiblePeer = new Peer(r.response.result);
-//
-//                    if (responsiblePeer.id === this.self.id)
-//                    {
-//                        this.resources = this.resources.filter(item => (!(item.name === this.replications[j].name)));
-//                        this.resources.push(<IResource>
-//                        {
-//                            name: this.replications[j].name,
-//                            id: this.replications[j].id,
-//                            url: this.replications[j].url,
-//                            primary: this.replications[j].primary
-//                        });
-//                        this.replications = this.replications.filter(item => (!(item.name === this.replications[j].name)));
-//                    }
-//                    else
-//                    {
-//                        var lastTimestamp: Date;
-//                        this.selectLastTimestampStatement.bind(this.replications[j].name).each((err: any, row: IDataRow) => lastTimestamp = row.timestamp, () =>
-//                        {
-//                            var promise: Q.Promise<IResponse>;
-//
-//                            if (typeof lastTimestamp !== "undefined")
-//                                promise = responsiblePeer.readResourceSince(this.replications[j].name, lastTimestamp.toString());
-//                            else
-//                                promise = responsiblePeer.readResourceAll(this.replications[j].name);
-//
-//                            promise.then(result =>
-//                            {
-//                                if (result.statusCode === 200)
-//                                {
-//                                    var data = result.response;
-//
-//                                    for (var c = 0; c < data.length; c++)
-//                                        this.insertWithTimestampStatement.run(data[c].Peer, this.replications[j].name, data[c].Value, data[c].Timestamp);
-//                                }
-//                            });
-//                        });
-//                    }
-//                });
-//            })(i);
-//        }
-//    }
-//}
