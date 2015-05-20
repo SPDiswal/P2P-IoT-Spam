@@ -1,0 +1,66 @@
+﻿body
+{
+    margin: 0;
+    padding: 0;
+    max-width: 600px;
+    width: 100%;
+}
+
+.row
+{
+    margin: 8px 0;
+    padding: 8px 0;
+}
+
+span.panel:not(:last-child)
+{
+    margin: 8px;
+}
+
+header
+{
+    margin: -26px 0 0 0;
+}
+
+header img
+{
+    float: left;
+    padding: 8px 16px;
+}
+
+header h1
+{
+    padding: 8px 16px;
+    text-align: right;
+}
+
+footer
+{
+    text-align: right;
+}
+
+main section
+{
+    margin: 8px;
+    text-align: right;
+}
+
+textarea
+{
+    height: auto;
+    resize: none;
+    width: 98%;
+    padding: 5px;
+}
+
+#publish,
+#subscribe,
+#unsubscribe
+{
+    display: none;
+}
+
+#subscribe p
+{
+    text-align: left;
+}
