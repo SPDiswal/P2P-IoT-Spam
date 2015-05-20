@@ -1,7 +1,7 @@
 ﻿import Q = require("q");
 import Promise = Q.Promise;
 
-interface IFramework
+interface IBottleneckFramework
 {
     publish(tags: Array<string>, contents: any): Promise<boolean>;
     subscribe(tags: Array<string>, callback: (tags: Array<string>, contents: any) => void, retrieveOldMessages?: boolean): Promise<string>;
@@ -14,4 +14,4 @@ interface IFramework
     // TODO: Ensure that host and port in .run() are 'valid' (i.e. this computer, not a random other computer)
 }
 
-export = IFramework;
+export = IBottleneckFramework;

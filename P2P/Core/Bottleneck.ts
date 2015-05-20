@@ -6,12 +6,11 @@ import Promise = Q.Promise;
 import IBroker = require("../Brokers/IBroker");
 import IFilterEvaluator = require("../Filters/IFilterEvaluator");
 import IFilterParser = require("../Filters/IFilterParser");
-import IFramework = require("./IFramework");
+import IFramework = require("./IBottleneckFramework");
 import IGuidGenerator = require("../Guids/IGuidGenerator");
 import IRouter = require("../Routers/IRouter");
 
 import Address = require("../Common/Address");
-import FilterEvaluator = require("../Filters/FilterEvaluator");
 import FilterParser = require("../Filters/FilterParser");
 import GuidGenerator = require("../Guids/GuidGenerator");
 import LocalChordPeer = require("../../P2P.Chord/Core/LocalChordPeer");
@@ -22,24 +21,24 @@ import SpanningTreeRouter = require("../Routers/SpanningTree/SpanningTreeRouter"
 import SubscriberListRouter = require("../Routers/SubscriberList/SubscriberListRouter");
 import Subscription = require("../Common/Subscription");
 
-class Framework implements IFramework
+class Bottleneck implements IFramework
 {
     private chord: LocalChordPeer;
     private guidGenerator: IGuidGenerator = new GuidGenerator();
     private parser: IFilterParser = new FilterParser();
-    private evaluator: IFilterEvaluator = new FilterEvaluator();
 
     private address: Address;
     private isRunning = false;
 
     private isLoggingChord = false;
 
-    constructor(app: Application, host: string, port: number, endpoint: string = "spam", private router: IRouter = null, private broker: IBroker = null)
+    constructor(app: Application, host: string, port: number, endpoint: string = "bottleneck", private router: IRouter = null, private broker: IBroker = null)
     {
+        if (endpoint.length > 0 && endpoint[0] !== "/") endpoint = "/" + endpoint;
         this.address = Address.fromHostPort(host, port);
 
-        if (this.broker === null) this.broker = new RestChordBroker(this.address, new RequestDispatcher());
-        if (this.router === null) this.router = new SpanningTreeRouter(this.address, this.broker, this.evaluator);
+        if (this.broker === null) this.broker = new RestChordBroker(endpoint, new RequestDispatcher());
+        if (this.router === null) this.router = new SubscriberListRouter(this.address, this.broker);
 
         this.chord = new LocalChordPeer(app, this.broker, host + ":" + port, endpoint, this.isLoggingChord);
     }
@@ -95,4 +94,4 @@ class Framework implements IFramework
     }
 }
 
-export = Framework;
+export = Bottleneck;

@@ -1,6 +1,6 @@
 {
-    "name": "P2P-IoT-Spam-Publish-Subscribe-Framework",
-    "description": "Unnamed publish/subscribe framework for P2P-IoT by Spam",
+    "name": "Bottleneck",
+    "description": "Bottleneck publish/subscribe framework for P2P-IoT by Spam",
     "version": "0.0.1",
     "private": true,
     "dependencies": 

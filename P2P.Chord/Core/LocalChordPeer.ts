@@ -54,7 +54,6 @@ class LocalChordPeer implements IPeer
 
     constructor(app: Application, private broker: IBroker, private _address: string, private endpoint: string, private isLogging = false)
     {
-        if (endpoint.length > 0 && endpoint[0] !== "/") this.endpoint = "/" + endpoint;
         this._id = Helpers.hash(_address);
 
         this.setUpDatabase();

@@ -7,182 +7,60 @@
         <title>{{ selfAddr }}</title>
 
         <link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,600" rel="stylesheet" type="text/css">
-        <link rel="stylesheet" href="../Styles/bootstrap.css">
+        <link rel="stylesheet" href="../Styles/layout.css">
         <link rel="stylesheet" href="../Styles/styles.css">
-        <link rel="stylesheet" href="../Styles/visuals.css">
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
-        <script src="//crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/sha1.js"></script>
-        <script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
-        <script src="../Scripts/interface.js"></script>
+        <link rel="stylesheet" href="../Styles/jquery.tagsinput.css">
+        <script src="../Scripts/vendor/jquery-2.1.4.min.js"></script>
+        <script src="../Scripts/vendor/jquery.tagsinput.js"></script>
+        <script src="../Scripts/demo.js"></script>
     </head>
 
     <body>
+        <header>
+            <span id="logo"><img src="../Content/Images/BottleLogo.png" alt="Bottleneck"/></span>
+            <h1>{{ selfAddr }}</h1>
+        </header>
         <main>
-            <div class="container">
-                <div class="row" id="home">
-                    <div class="col-lg-1">
-                        <h3 id="predecessorChevron">
-                            <span class="glyphicon glyphicon-chevron-left"></span>
-                        </h3>
-                    </div>
-                    <div class="col-lg-2">
-                        <h3 class="chordAddress" id="predecessorAddress"></h3>
-                        <h3 class="chordHash" id="predecessorHash"></h3>
-                    </div>
-                    <div class="col-lg-6">
-                        <h1 id="selfAddress">{{ selfAddr }}</h1>
-                        <h4 id="selfHash"></h4>
-                    </div>
-                    <div class="col-lg-2">
-                        <h3 class="chordAddress" id="successorAddress"></h3>
-                        <h3 class="chordHash" id="successorHash"></h3>
-                    </div>
-                    <div class="col-lg-1">
-                        <h3 id="successorChevron">
-                            <span class="glyphicon glyphicon-chevron-right"></span>
-                        </h3>
-                    </div>
-                </div>
-                <hr/>
-
-                <div class="row">
-                    <div class="col-lg-2">
-                        <div class="input-group">
-                            <span class="input-group-btn">
-                                <button class="btn btn-default btn-transparent" id="joinToggleButton" type="button"
-                                        data-toggle="tooltip" data-placement="left" title="Join">
-                                    <span class="glyphicon glyphicon-link"></span>
-                                </button>
-                            </span>
-                            <input class="form-control" id="joinPort" value="" placeholder="Port" type="text" style="display: none">
-                            <span class="input-group-btn">
-                                <button class="btn btn-default btn-transparent" id="joinButton" type="button" style="display: none">
-                                    <span class="glyphicon glyphicon-arrow-right"></span>
-                                </button>
-                            </span>
-                        </div>
-                    </div>
-                    <div class="col-lg-offset-1 col-lg-6">
-                        <div class="input-group">
-                            <input class="form-control" id="lookup" value="" placeholder="Lookup" type="text">
-                            <span class="input-group-btn">
-                                <button class="btn btn-default btn-transparent" id="searchButton" type="button"
-                                        data-toggle="tooltip" data-placement="top" title="Visualise resource">
-                                    <span class="glyphicon glyphicon-search"></span>
-                                </button>
-                            </span>
-                        </div>
-                    </div>
-                    <div class="col-lg-push-2 col-lg-1">
-                        <button class="btn btn-default btn-transparent pull-right" id="fingerToggleButton" type="button"
-                                data-toggle="tooltip" data-placement="right" title="Fingers & successors">
-                            <span class="glyphicon glyphicon-asterisk"></span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-lg-2">
-                        <button class="btn btn-default btn-transparent" id="leaveButton" type="button"
-                                data-toggle="tooltip" data-placement="left" title="Leave">
-                            <span class="glyphicon glyphicon-log-out"></span>
-                        </button>
-                    </div>
-                    <div class="col-lg-offset-1 col-lg-6">
-                        <div id="lookupResultLeft">
-                            <i>Type to spam...</i>
-                        </div>
-                        <div id="lookupResultRight"></div>
-                    </div>
-                    <div class="col-lg-push-2 col-lg-1">
-                        <button class="btn btn-default btn-transparent pull-right" id="resourceToggleButton" type="button"
-                                data-toggle="tooltip" data-placement="right" title="Resources & replications">
-                            <span class="glyphicon glyphicon-tasks"></span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-lg-12 center">
-                        <div id="visualisation"></div>
-                    </div>
-                </div>
-
-                <div class="row" id="fingers" style="display: none">
-                    <div class="col-lg-12 center">
-                        <hr/>
-                        <h3>Fingers</h3>
-                        <p id="fingerFixed"></p>
-                        <div id="fingerList"></div>
-                    </div>
-                </div>
-
-                <div class="row" id="successors" style="display: none">
-                    <div class="col-lg-12 center">
-                        <hr/>
-                        <h3>Successors</h3>
-                        <p id="successorFixed"></p>
-                        <div id="successorList"></div>
-                    </div>
-                </div>
-
-                <div class="row" id="resources" style="display: none">
-                    <div class="col-lg-12 center">
-                        <hr/>
-                        <h3>Resources</h3>
-                        <div id="resourceList"></div>
-                        <br/>
-                        <br/>
-                        <div class="row">
-                            <div class="col-lg-1">
-                                <button class="btn btn-default btn-transparent" id="addResourceToggleButton" type="button"
-                                        data-toggle="tooltip" data-placement="top" title="Add resource">
-                                    <span class="glyphicon glyphicon-plus"></span>
-                                </button>
-                            </div>
-                        </div>
-                        <br/>
-                        <form role="form" id="addResource" style="display: none">
-                            <div class="row">
-                                <div class="form-group col-lg-4">
-                                    <input type="text" class="form-control" id="addResourceName" placeholder="Name">
-                                    <p id="addResourceId"></p>
-                                    <input type="text" class="form-control" id="addResourceUrl" placeholder="URL">
-                                    <input type="text" class="form-control" id="addResourcePrimary" placeholder="Primary result">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-lg-1 center">
-                                    <button class="btn btn-default btn-transparent" id="addResourceButton" type="button"
-                                            data-toggle="tooltip" data-placement="top" title="OK">
-                                        <span class="glyphicon glyphicon-ok"></span>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="row" id="replications" style="display: none">
-                    <div class="col-lg-12 center">
-                        <hr/>
-                        <h3>Replications</h3>
-                        <div id="replicationList"></div>
-                    </div>
-                </div>
-            </div>
+            <section id="messages">
+                <textarea id="messageContents" rows="5" readonly="readonly"></textarea>
+            </section>
+            <hr />
+            <section id="tabs">
+                <button id="joinTab">Join</button>
+                <button id="publishTab">Publish</button>
+                <button id="subscribeTab">Subscribe</button>
+                <button id="unsubscribeTab">Unsubscribe</button>
+                <button id="clearMessages">Clear</button>
+            </section>
+            <hr/>
+            <section id="join" class="tab">
+                <label for="joinPort">127.0.0.1:</label>
+                <input id="joinPort" placeholder="Port"/>
+                <button id="joinPortButton">Join</button>
+            </section>
+            <section id="publish" class="tab">
+                <textarea id="publishContents" placeholder="Contents" rows="5"></textarea>
+                <input id="publishTags" class="tags" value="" />
+                <button id="publishButton">Publish</button>
+            </section>
+            <section id="subscribe" class="tab">
+                <p>(tags, contents) &rArr;</p>
+                <textarea id="subscribeFilter" placeholder="Filter" rows="1"></textarea>
+                <input id="subscribeTags" class="tags" value=""/>
+                <input id="subscribeRetrieveOld" type="checkbox"/>
+                <label for="subscribeRetrieveOld">Retrieve old messages</label>
+                <button id="subscribeButton">Subscribe</button>
+            </section>
+            <section id="unsubscribe" class="tab">
+                <input id="unsubscribeId" placeholder="Subscription ID" />
+                <button id="unsubscribeButton">Unsubscribe</button>
+            </section>
         </main>
-
         <footer>
-            <div class="container">
-                <div class="row">
-                    <hr/>
-                    <h1 id="milestone">Milestone 4</h1>
-                    <p id="course">Internet of Things/Peer-networking</p>
-                    <p id="authors">Group Spam &bull; Mikkel Lambæk, Steffen Diswal</p>
-                </div>
-            </div>
+            <hr/>
+            <div class="row panel" id="course">Internet of Things/Peer-to-Peer Project</div>
+            <div class="row" id="authors">
+                <span class="panel emphasised">Mikkel Lambæk</span><span class="panel emphasised">Steffen Diswal</span></div>
         </footer>
     </body>
 </html>

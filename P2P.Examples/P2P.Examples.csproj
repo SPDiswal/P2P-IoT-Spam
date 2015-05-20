@@ -18,24 +18,18 @@
     <IISExpressUseClassicPipelineMode />
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="Content\Fonts\glyphicons-halflings-regular.svg" />
-    <Content Include="Content\Images\Background.png" />
-    <Content Include="Scripts\bootstrap.min.js" />
-    <Content Include="Scripts\d3.v3.min.js" />
+    <Content Include="Content\Images\BottleLogo.png" />
     <Content Include="Scripts\interface.js" />
-    <Content Include="Scripts\jquery.min.js" />
-    <Content Include="Scripts\sha1.js" />
-    <Content Include="Styles\bootstrap.css" />
+    <Content Include="Scripts\vendor\jquery-2.1.4.min.js" />
+    <Content Include="Scripts\vendor\jquery.tagsinput.js" />
+    <Content Include="Styles\jquery.tagsinput.css" />
+    <Content Include="Styles\layout.css" />
     <Content Include="Styles\styles.css" />
-    <Content Include="Styles\visuals.css" />
     <Content Include="Views\index.html" />
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Content\Fonts\glyphicons-halflings-regular.eot" />
-    <Content Include="Content\Fonts\glyphicons-halflings-regular.ttf" />
-    <Content Include="Content\Fonts\glyphicons-halflings-regular.woff" />
-    <Content Include="Content\Fonts\glyphicons-halflings-regular.woff2" />
+    <Content Include="package.json" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>
@@ -44,13 +38,17 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="Example.ts" />
+    <TypeScriptCompile Include="Demo.ts" />
+    <TypeScriptCompile Include="LogEx.ts" />
+    <TypeScriptCompile Include="Scripts\demo.ts" />
     <TypeScriptCompile Include="Scripts\typings\body-parser\body-parser.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\crypto\crypto.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\express\express.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\jquery\jquery.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\q\q.d.ts" />
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">12.0</VisualStudioVersion>
   </PropertyGroup>

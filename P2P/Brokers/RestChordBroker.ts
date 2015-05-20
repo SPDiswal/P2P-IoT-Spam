@@ -12,56 +12,58 @@ import StatusCode = require("../Http/StatusCode");
 
 class RestChordBroker implements IBroker
 {
-    // TODO Extend the RestChordBroker with logging capabilities so that we can measure network traffic.
-
     private incomingRouterCallback: (message: string, data: any) => Promise<any> = null;
 
-    constructor(private address: Address, private request: IRequestDispatcher)
+    public log = <Array<any>>[ ];
+
+    constructor(private endpoint: string, private request: IRequestDispatcher)
     {
     }
 
     public send(destination: Address, message: string, data: any): Promise<any>
     {
+        this.log.push({ destination: destination, message: message, data: data });
+
         switch (message)
         {
             case RouterMessages.Ping:
-                return this.resolveOnNoContent(this.request.get(destination.toString() + "/ping"));
+                return this.resolveOnNoContent(this.request.get(destination.toString() + this.endpoint + "/ping"));
 
             case RouterMessages.Join:
-                return this.resolveOnNoContent(this.request.post(destination.toString() + "/join/" + (<Address>data).toString()));
+                return this.resolveOnNoContent(this.request.post(destination.toString() + this.endpoint + "/join/" + (<Address>data).toString()));
 
             case RouterMessages.Lookup:
-                return this.resolveOnSuccess(this.request.get(destination.toString() + "/lookup/" + Helpers.hash(<string>data))).then((p: string) => Address.from(p));
+                return this.resolveOnSuccess(this.request.get(destination.toString() + this.endpoint + "/lookup/" + Helpers.hash(<string>data))).then((p: string) => Address.from(p));
 
             case RouterMessages.GetResponsibility:
-                return this.resolveOnSuccess(this.request.get(destination.toString() + "/responsibilities/" + data));
+                return this.resolveOnSuccess(this.request.get(destination.toString() + this.endpoint + "/responsibilities/" + data));
 
             case RouterMessages.GetAllResponsibilities:
-                return this.resolveOnSuccess(this.request.get(destination.toString() + "/responsibilities"));
+                return this.resolveOnSuccess(this.request.get(destination.toString() + this.endpoint + "/responsibilities"));
 
             case RouterMessages.PostResponsibility:
-                return this.resolveOnNoContent(this.request.post(destination.toString() + "/responsibilities", JSON.stringify(data)));
-                
+                return this.resolveOnNoContent(this.request.post(destination.toString() + this.endpoint + "/responsibilities", JSON.stringify(data)));
+
             case RouterMessages.PutResponsibility:
-                return this.resolveOnNoContent(this.request.put(destination.toString() + "/responsibilities", JSON.stringify(data)));
+                return this.resolveOnNoContent(this.request.put(destination.toString() + this.endpoint + "/responsibilities", JSON.stringify(data)));
 
             case RouterMessages.DeleteResponsibility:
-                return this.resolveOnNoContent(this.request.delete(destination.toString() + "/responsibilities/" + data));
+                return this.resolveOnNoContent(this.request.delete(destination.toString() + this.endpoint + "/responsibilities/" + data));
 
             case RouterMessages.Retrieve:
-                return this.resolveOnSuccess(this.request.get(destination.toString() + "/data/tag/" + data));
+                return this.resolveOnSuccess(this.request.get(destination.toString() + this.endpoint + "/data/tag/" + data));
 
             case RouterMessages.RetrieveSince:
-                return this.resolveOnSuccess(this.request.get(destination.toString() + "/data/tag/" + data.identifier + "/" + data.timestamp));
+                return this.resolveOnSuccess(this.request.get(destination.toString() + this.endpoint + "/data/tag/" + data.identifier + "/" + data.timestamp));
 
             case RouterMessages.Persist:
-                return this.resolveOnNoContent(this.request.post(destination.toString() + "/data", JSON.stringify(data)));
+                return this.resolveOnNoContent(this.request.post(destination.toString() + this.endpoint + "/data", JSON.stringify(data)));
 
             case RouterMessages.Sweep:
-                return this.resolveOnNoContent(this.request.delete(destination.toString() + "/data/" + data));
+                return this.resolveOnNoContent(this.request.delete(destination.toString() + this.endpoint + "/data/" + data));
 
             default:
-                return this.resolveOnSuccess(this.request.post(destination.toString() + "/action/" + message, JSON.stringify(data)));
+                return this.resolveOnSuccess(this.request.post(destination.toString() + this.endpoint + "/action/" + message, JSON.stringify(data)));
         }
     }
 
@@ -100,20 +102,6 @@ class RestChordBroker implements IBroker
 
         return deferred.promise;
     }
-
-//    private resolveToAddressOnOk(promise: Promise<IResponse>): Promise<Address>
-//    {
-//        var deferred = Q.defer<Address>();
-//
-//        promise.then(r =>
-//        {
-//            if (r.statusCode === StatusCode.Ok) deferred.resolve(Address.from(<string>r.response));
-//            else deferred.reject((void 0));
-//            //
-//        }).catch(() => deferred.reject((void 0)));
-//
-//        return deferred.promise;
-//    }
 
     private resolveOnSuccess(promise: Promise<IResponse>): Promise<any>
     {

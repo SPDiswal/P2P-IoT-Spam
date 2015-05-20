@@ -1,130 +1,49 @@
 ﻿html
 {
-    overflow-y: scroll;
-}
-
-html,
-body
-{
-    background-attachment: fixed;
-    background-image: url("../Content/Images/Background.png");
-    background-repeat: no-repeat;
-    color: white;
+    background: radial-gradient(at top left, #EEE, #DDD);
+    color: #548235;
     font-family: "Source Sans Pro", sans-serif;
     font-size: 14pt;
-    height: 100%;
+    height: 100%
 }
 
-main
+hr
 {
-    height: auto;
-    margin: 0 auto -220px;
-    min-height: 100%;
-    padding: 0 0 220px;
+    background-color: #548235;
+    border-width: 0;
+    color: #548235;
+    height: 2px;
 }
 
-footer
+header
 {
-    height: 220px;
+    background-color: #548235;
 }
 
-.btn-transparent
+header h1
 {
-    background: none;
-    border: none;
-    box-shadow: none;
     color: white;
-}
-
-.btn-transparent:focus
-{
-    background: none;
-    color: white;
-}
-
-.btn-transparent:hover
-{
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-}
-
-.col-lg-1, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-6
-{
-    display: inline-block;
-    float: none;
-    margin-right: -4px;
-    vertical-align: middle;
-}
-
-.center
-{
-    text-align: center;
-}
-
-.chordAddress
-{
-    font-size: 18pt;
-    font-weight: 400;
-}
-
-.chordHash
-{
-    font-size: 14pt;
-    font-weight: 400;
-    margin: -5px 0 0;
-}
-
-#home
-{
-    text-align: center;
-}
-
-#selfAddress
-{
     font-size: 28pt;
-    font-weight: 600;
-}
-
-#selfHash
-{
-    font-size: 14pt;
-    font-weight: 400;
-    margin: -5px 0 0;
-}
-
-#lookupResultLeft
-{
-    float: left;
-    margin-top: 10px;
-}
-
-#lookupResultRight
-{
-    float: right;
-    margin-right: 37px;
-    margin-top: 10px;
-}
-
-#addResourceUrl
-{
-    margin-top: 5px;
-    margin-bottom: 5px;
-}
-
-#milestone
-{
-    font-size: 32pt;
     font-weight: 300;
 }
 
-#course
+h2
 {
+    color: black;
     font-size: 20pt;
-    font-weight: 600;
-    margin: -10px 0 20px 0;
+    font-weight: 300;
 }
 
-#authors
+.panel
 {
-    font-size: 16pt;
+    background-color: #FCFCFC;
+    margin: 8px 0;
+    padding: 8px 16px;
+    text-align: right;
+}
+
+.emphasised
+{
+    color: #385723;
+    font-weight: 600;
 }

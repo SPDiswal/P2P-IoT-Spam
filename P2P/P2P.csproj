@@ -38,8 +38,8 @@
     <TypeScriptCompile Include="Common\Address.ts" />
     <TypeScriptCompile Include="Common\Message.ts" />
     <TypeScriptCompile Include="Common\Subscription.ts" />
-    <TypeScriptCompile Include="Core\IFramework.ts" />
-    <TypeScriptCompile Include="Core\Framework.ts" />
+    <TypeScriptCompile Include="Core\IBottleneckFramework.ts" />
+    <TypeScriptCompile Include="Core\Bottleneck.ts" />
     <TypeScriptCompile Include="Filters\FilterEvaluator.ts" />
     <TypeScriptCompile Include="Filters\IFilterEvaluator.ts" />
     <TypeScriptCompile Include="Guids\GuidGenerator.ts" />

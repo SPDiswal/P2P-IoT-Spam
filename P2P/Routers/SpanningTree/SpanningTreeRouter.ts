@@ -7,6 +7,7 @@ import IRouter = require("../IRouter");
 
 import Address = require("../../Common/Address");
 import ArrayUtilities = require("../../Utilities/ArrayUtilities");
+import FilterEvaluator = require("../../Filters/FilterEvaluator");
 import Message = require("../../Common/Message");
 import RouterMessages = require("../RouterMessages");
 import Subscription = require("../../Common/Subscription");
@@ -20,9 +21,7 @@ class SpanningTreeRouter implements IRouter
     private localSubscriptions: Array<Subscription> = [ ];
     private nodes: any = { };
 
-    // TODO Ensure (in heartbeat) that all local subscriptions are registered properly by nodes in spanning trees.
-
-    constructor(private address: Address, private broker: IBroker, private filterEvaluator: IFilterEvaluator)
+    constructor(private address: Address, private broker: IBroker, private filterEvaluator: IFilterEvaluator = new FilterEvaluator())
     {
         this.broker.incoming((message: string, data: any): Promise<any> =>
         {
@@ -84,6 +83,9 @@ class SpanningTreeRouter implements IRouter
 
                 case RouterMessages.Heartbeat:
                     this.repair();
+
+                    // TODO Clean up database with deleteData.
+
                     break;
             }
 

@@ -7,6 +7,7 @@ import IRouter = require("../IRouter");
 
 import Address = require("../../Common/Address");
 import ArrayUtilities = require("../../Utilities/ArrayUtilities");
+import FilterEvaluator = require("../../Filters/FilterEvaluator");
 import Message = require("../../Common/Message");
 import Responsibility = require("../../Common/Responsibility");
 import RouterMessages = require("../RouterMessages");
@@ -18,9 +19,7 @@ class SubscriberListRouter implements IRouter
     private recentMessages: any = { };
     private localSubscriptions: Array<Subscription> = [ ];
 
-    // TODO Ensure (in heartbeat) that all local subscriptions are registered properly at the responsible peers.
-
-    constructor(private address: Address, private broker: IBroker, private filterEvaluator: IFilterEvaluator)
+    constructor(private address: Address, private broker: IBroker, private filterEvaluator: IFilterEvaluator = new FilterEvaluator())
     {
         this.broker.incoming((message: string, data: any): Promise<any> =>
         {
