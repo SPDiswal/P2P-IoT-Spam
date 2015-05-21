@@ -418,7 +418,11 @@ class LocalChordPeer implements IPeer
     public getResponsibility(identifier: string): Promise<Responsibility>
     {
         var responsibility = ArrayUtilities.find(this.responsibilities, r => r.identifier === identifier);
-        return Helpers.resolvedPromise(responsibility);
+
+        if (responsibility)
+            return Helpers.resolvedPromise(responsibility);
+        else
+            return Helpers.resolvedPromise(new Responsibility(identifier, [ ]));
     }
 
     public getResponsibilities(): Promise<Array<Responsibility>>

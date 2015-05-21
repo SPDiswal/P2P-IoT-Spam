@@ -45,8 +45,7 @@ class SubscriberListRouter implements IRouter
                     break;
 
                 case SubscriberListMessages.GetSubscriberList:
-                    deferred.resolve(this.getFilteredSubscriberList(Message.deserialise(data)));
-                    return deferred.promise;
+                    return this.getFilteredSubscriberList(Message.deserialise(data));
 
                 case SubscriberListMessages.Message:
                     this.readMessage(Message.deserialise(data));
@@ -97,7 +96,7 @@ class SubscriberListRouter implements IRouter
         })).then(s =>
         {
             var subscribers = ArrayUtilities.distinct(ArrayUtilities.flatten(s));
-
+            
             // Sends the message to each subscriber.
             Q.allSettled(subscribers.map(subscriber => this.sendMessage(subscriber.address, message)))
                 .then(() => deferred.resolve(true));

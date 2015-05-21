@@ -19,7 +19,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Content\Images\BottleLogo.png" />
-    <Content Include="Scripts\interface.js" />
     <Content Include="Scripts\vendor\jquery-2.1.4.min.js" />
     <Content Include="Scripts\vendor\jquery.tagsinput.js" />
     <Content Include="Styles\jquery.tagsinput.css" />

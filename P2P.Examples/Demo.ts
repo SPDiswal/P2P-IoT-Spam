@@ -120,7 +120,11 @@ class Demo
         app.post("/join/:port", (req, res) =>
         {
             console.log("Joining " + req.params.port);
+
+            // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
             var status = framework.join("127.0.0.1" /* Hard-coded localhost */, parseInt(req.params.port));
+            // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
+
             this.messages.push("Joined 127.0.0.1:" + req.params.port);
             this.respond(res, status);
         });
@@ -128,7 +132,12 @@ class Demo
         app.post("/publish", jsonParser, (req, res) =>
         {
             console.log("Publishing " + JSON.stringify(req.body));
+
+            // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
             var status = framework.publish(req.body.tags, req.body.contents);
+            // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
+
+            this.messages.push("Published " + JSON.stringify(req.body));
             this.respond(res, status);
         });
 
@@ -145,14 +154,22 @@ class Demo
             };
             var retrieveOldMessages = req.body.retrieveOldMessages;
 
+            // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
             var id = framework.subscribeToContents(tags, filter /* Evil Hacks Inc. */, callback, retrieveOldMessages);
+            // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
+
+            this.messages.push("Subscribed to " + JSON.stringify(req.body));
             this.respondWithId(res, id);
         });
 
         app.post("/unsubscribe/:id", (req, res) =>
         {
             console.log("Unsubscribing " + req.params.id);
+
+            // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
             var status = framework.unsubscribe(req.params.id);
+            // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
+
             this.messages.push("Unsubscribed " + req.params.id);
             this.respond(res, status);
         });
