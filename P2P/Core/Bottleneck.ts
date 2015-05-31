@@ -32,7 +32,7 @@ class Bottleneck implements IFramework
 
     private isLoggingChord = false;
 
-    constructor(app: Application, host: string, port: number, endpoint: string = "bottleneck", private router: IRouter = null, private broker: IBroker = null)
+    constructor(app: Application, host: string, port: number, endpoint: string = "bottleneck", private router: IRouter = null, private broker: IBroker = null, private stabiliseInterval = 1000)
     {
         if (endpoint.length > 0 && endpoint[0] !== "/") endpoint = "/" + endpoint;
         this.address = Address.fromHostPort(host, port);
@@ -83,7 +83,7 @@ class Bottleneck implements IFramework
 
     public run(): void
     {
-        this.chord.run();
+        this.chord.run(this.stabiliseInterval);
         this.isRunning = true;
     }
 

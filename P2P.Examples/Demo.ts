@@ -7,13 +7,9 @@ import Promise = Q.Promise;
 
 import IRouter = require("../P2P/Routers/IRouter");
 
-import Address = require("../P2P/Common/Address");
 import Bottleneck = require("../P2P/Core/Bottleneck");
-import RequestDispatcher = require("../P2P/Http/RequestDispatcher");
 import RestChordBroker = require("../P2P/Brokers/RestChordBroker");
-import SpanningTreeRouter = require("../P2P/Routers/SpanningTree/SpanningTreeRouter");
 import StatusCode = require("../P2P/Http/StatusCode");
-import SubscriberListRouter = require("../P2P/Routers/SubscriberList/SubscriberListRouter");
 
 class Demo
 {
@@ -22,7 +18,6 @@ class Demo
     private host: string;
     private router: IRouter;
     private broker: RestChordBroker;
-    private log = <Array<any>>[ ];
 
     private messages = <Array<string>>[ ];
 
@@ -82,30 +77,17 @@ class Demo
         app.use(Express.static(__dirname + "/"));
 
         // Brings the framework to life.
+
+        // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
         this.bottleneck = new Bottleneck(app, this.host, this.port);
+        // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
 
         this.setUp(app, this.bottleneck);
 
+        // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
         app.listen(this.port, this.host, () => this.bottleneck.run());
-
-        //        this.setUpLog(app);
+        // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // // //
     }
-
-    //    private setUpLog(app: Express.Application)
-    //    {
-    //        app.get("/log", (req, res) =>
-    //        {
-    //            res.status(StatusCode.Ok).json(this.log);
-    //        });
-    //
-    //        setInterval(() =>
-    //        {
-    //            this.log.push({
-    //                numberOfMessages: this.broker.log.length,
-    //                dataLength: JSON.stringify(this.broker.log).length
-    //            });
-    //        }, 5000);
-    //    }
 
     private setUp(app: Express.Application, framework: Bottleneck)
     {

@@ -22,7 +22,7 @@ class RestChordBroker implements IBroker
 
     public send(destination: Address, message: string, data: any): Promise<any>
     {
-        this.log.push({ destination: destination, message: message, data: data });
+        this.log.push({ message: message, data: data });
 
         switch (message)
         {
@@ -79,7 +79,11 @@ class RestChordBroker implements IBroker
         if (this.incomingRouterCallback !== null)
         {
             this.incomingRouterCallback(message, data)
-                .then((result: any) => deferred.resolve(result))
+                .then((result: any) =>
+                {
+                    this.log.push({ message: message, data: data });
+                    deferred.resolve(result);
+                })
                 .catch(() => deferred.reject((void 0)));
         }
         else

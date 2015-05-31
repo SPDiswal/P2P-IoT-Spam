@@ -38,6 +38,8 @@ class LocalChordPeer implements IPeer
     private currentFingerFixed = 0;
     private currentSuccessorFixed = 0;
 
+    private stabilisationTimeInterval: number;
+
     private stabiliseInterval: any;
     private checkPredecessorInterval: any;
     private fixFingersInterval: any;
@@ -409,7 +411,7 @@ class LocalChordPeer implements IPeer
             Q.all([
                 this.predecessor.setSuccessor(0, this.successor.address),
                 this.successor.setPredecessor(this.predecessor.address)
-            ]).then(() => this.run());
+            ]).then(() => this.run(this.stabilisationTimeInterval));
         }
 
         return Helpers.resolvedUnit();
@@ -849,21 +851,23 @@ class LocalChordPeer implements IPeer
         clearInterval(this.heartbeatInterval);
     }
 
-    public run()
+    public run(stabiliseInterval: number)
     {
+        this.stabilisationTimeInterval = stabiliseInterval;
+
         this.log("Chord peer running at " + this.address + "\n");
         this.resetToSinglePeer(this.address);
 
         var numberOfIntervals = 8;
 
-        setTimeout(() => this.stabiliseInterval = setInterval(() => this.stabilise(), Constants.StabiliseInterval), 0 * Constants.StabiliseInterval / numberOfIntervals);
-        setTimeout(() => this.checkPredecessorInterval = setInterval(() => this.checkPredecessor(), Constants.StabiliseInterval), 1 * Constants.StabiliseInterval / numberOfIntervals);
-        setTimeout(() => this.fixFingersInterval = setInterval(() => this.fixFingers(), Constants.StabiliseInterval), 2 * Constants.StabiliseInterval / numberOfIntervals);
-        setTimeout(() => this.fixSuccessorsInterval = setInterval(() => this.fixSuccessors(), Constants.StabiliseInterval), 3 * Constants.StabiliseInterval / numberOfIntervals);
-        setTimeout(() => this.checkResponsibilitiesInterval = setInterval(() => this.checkResponsibilities(), Constants.StabiliseInterval), 4 * Constants.StabiliseInterval / numberOfIntervals);
-        setTimeout(() => this.checkReplicationsInterval = setInterval(() => this.checkReplications(), Constants.StabiliseInterval), 5 * Constants.StabiliseInterval / numberOfIntervals);
-        setTimeout(() => this.synchroniseDataInterval = setInterval(() => this.synchroniseData(), Constants.StabiliseInterval), 6 * Constants.StabiliseInterval / numberOfIntervals);
-        setTimeout(() => this.heartbeatInterval = setInterval(() => this.sendHeartbeat(), Constants.StabiliseInterval), 7 * Constants.StabiliseInterval / numberOfIntervals);
+        setTimeout(() => this.stabiliseInterval = setInterval(() => this.stabilise(), this.stabilisationTimeInterval), 0 * this.stabilisationTimeInterval / numberOfIntervals);
+        setTimeout(() => this.checkPredecessorInterval = setInterval(() => this.checkPredecessor(), this.stabilisationTimeInterval), 1 * this.stabilisationTimeInterval / numberOfIntervals);
+        setTimeout(() => this.fixFingersInterval = setInterval(() => this.fixFingers(), this.stabilisationTimeInterval), 2 * this.stabilisationTimeInterval / numberOfIntervals);
+        setTimeout(() => this.fixSuccessorsInterval = setInterval(() => this.fixSuccessors(), this.stabilisationTimeInterval), 3 * this.stabilisationTimeInterval / numberOfIntervals);
+        setTimeout(() => this.checkResponsibilitiesInterval = setInterval(() => this.checkResponsibilities(), this.stabilisationTimeInterval), 4 * this.stabilisationTimeInterval / numberOfIntervals);
+        setTimeout(() => this.checkReplicationsInterval = setInterval(() => this.checkReplications(), this.stabilisationTimeInterval), 5 * this.stabilisationTimeInterval / numberOfIntervals);
+        setTimeout(() => this.synchroniseDataInterval = setInterval(() => this.synchroniseData(), this.stabilisationTimeInterval), 6 * this.stabilisationTimeInterval / numberOfIntervals);
+        setTimeout(() => this.heartbeatInterval = setInterval(() => this.sendHeartbeat(), this.stabilisationTimeInterval), 7 * this.stabilisationTimeInterval / numberOfIntervals);
     }
 }
 
